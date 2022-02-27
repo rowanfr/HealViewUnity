@@ -93,12 +93,15 @@ public class MarchingCube : MonoBehaviour
 
         float isolevel = 0.5f;
 
-        float[,,] testArray = { { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } }, { { 0, 0, 0 }, { 0, 1, 0}, { 0 , 0 ,0 } }, { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } } };
+        float[,,] testArray = { { { 0, 0, 0 }, { 0, 1, 0 }, { 0, 0, 0 } }, { { 0, 0, 0 }, { 0, 1, 0}, { 0 , 0 ,0 } }, { { 1, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } } };
 
         Debug.Log("Start Mesh Build");
         Debug.Log(testArray);
 
         Mesh mesh = new Mesh();
+
+        List<Vector3> triangleList = new List<Vector3>(mesh.vertices);
+        List<int> trianglesSequence = new List<int>(mesh.triangles);
 
         Debug.Log("Array Sizes");
         Debug.Log("x");
@@ -228,7 +231,7 @@ public class MarchingCube : MonoBehaviour
                         Debug.Log(triangles[n].vertices[2].position * 10);
                     }
 
-                    List<Vector3> triangleList = new List<Vector3>(mesh.vertices);
+                    
 
                     
 
@@ -249,7 +252,7 @@ public class MarchingCube : MonoBehaviour
                     }
 
 
-                    mesh.vertices = triangleList.ToArray();
+                    
 
                     Debug.Log("Mesh Input");
                     for (int n = 0; n < mesh.vertices.Length; n+= 3)
@@ -260,13 +263,18 @@ public class MarchingCube : MonoBehaviour
                         Debug.Log(mesh.vertices[n + 2]);
                     }
 
-                    List<int> trianglesSequence = new List<int>(mesh.triangles);
-
-                    for (int currentNumTriangles = mesh.triangles.Length; currentNumTriangles < ntriang; currentNumTriangles += 3)
+                    //This is what organizes the numbering of the triangle sequence
+                    //This is the simplest option, which is in effect count the number of items currently in the list and add 3 sequentially
+                    //This is only possible due to the vertex sequnce of triangles consistently being point1 -> point2 -> point3
+                    //Were this not the case we would need to organize this for proper arrangements, luckily currently we dont
+                    //n is the number of point indeces, because of this ntriang must be multipplied by 3 as it represents a triangle and not a single index point
+                    //
+                    int currentNumTriangles = trianglesSequence.Count;
+                    for (int n = currentNumTriangles; n < ((ntriang*3) + currentNumTriangles); n += 3)
                     {
-                        trianglesSequence.Add(currentNumTriangles);
-                        trianglesSequence.Add(currentNumTriangles + 1);
-                        trianglesSequence.Add(currentNumTriangles + 2);
+                        trianglesSequence.Add(n);
+                        trianglesSequence.Add(n + 1);
+                        trianglesSequence.Add(n + 2);
                     }
 
                     Debug.Log("Triangles Loaded");
@@ -278,25 +286,22 @@ public class MarchingCube : MonoBehaviour
                         Debug.Log(trianglesSequence[n + 2]);
                     }
 
-
-
-                    mesh.triangles = trianglesSequence.ToArray();
-
-                    Debug.Log("Mesh Triangles");
-                    for (int n = 0; n < mesh.triangles.Length; n+= 3)
-                    {
-                        Debug.Log("Mesh Triangles Order: " + n.ToString());
-                        Debug.Log(mesh.triangles[n]);
-                        Debug.Log(mesh.triangles[n + 1]);
-                        Debug.Log(mesh.triangles[n + 2]);
-                    }
-
                 }
             }
         }
-        Debug.Log(mesh.vertices);
-        Debug.Log(mesh.triangles);
+        for (int n = 0; n < triangleList.Count; n++)
+        {
+            Debug.Log(triangleList[n]);
+        }
+        for (int n = 0; n < trianglesSequence.Count; n++)
+        {
+            Debug.Log(trianglesSequence[n]);
+        }
         Debug.Log("Hello");
+
+        mesh.vertices = triangleList.ToArray();
+        mesh.triangles = trianglesSequence.ToArray();
+
         return mesh;
     }
 
