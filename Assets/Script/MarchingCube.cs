@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-
+[RequireComponent(typeof(MeshFilter))]
 public class MarchingCube : MonoBehaviour
 {
     public struct XYZ
@@ -23,104 +23,287 @@ public class MarchingCube : MonoBehaviour
         public float[] val;//8 val for
     }
 
-    int i,ntriang;
-    byte cubeindex = 0;
-    XYZ[] vertlist;
+    
+    
 
     //Isolevel is cutoff point for 
-    float isolevel = 0.5f;
-
-    float[,,] testArray = { { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } }, { { 0, 0, 0 }, { 0, 1, 0 }, { 0, 0, 0 } }, { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } } };
-    float zSpacing = 10;
-    float ySpacing = 10;
-    float xSpacing = 10;
+    
 
     MarchingCubeTables DataTable = new MarchingCubeTables();
 
-    GRIDCELL makeGrid()
+    GRIDCELL makeGrid(float[,,] examinedMatrix, int x, int y, int z)
     {
         GRIDCELL grid = new GRIDCELL();
-        int zSize = testArray.GetLength(0);
-        int ySize = testArray.GetLength(1);
-        int xSize = testArray.GetLength(2);
-        return grid;
-    }
-    uint meshBuild()
-    {
-        GRIDCELL grid = makeGrid();
-        
+        //Must call new here as we are dynamically declaring space for array and the compiler doesn't infer that from setting it equal to an array
 
-        TRIANGLE tri = new TRIANGLE();
-        tri.vertices[0].position = new Vector3(0, 0, 0);
-        
-        if (grid.val[0] < isolevel) cubeindex |= 1;
-        if (grid.val[1] < isolevel) cubeindex |= 2;
-        if (grid.val[2] < isolevel) cubeindex |= 4;
-        if (grid.val[3] < isolevel) cubeindex |= 8;
-        if (grid.val[4] < isolevel) cubeindex |= 16;
-        if (grid.val[5] < isolevel) cubeindex |= 32;
-        if (grid.val[6] < isolevel) cubeindex |= 64;
-        if (grid.val[7] < isolevel) cubeindex |= 128;
-
-        /* Cube is entirely in/out of the surface */
-        if (DataTable.edgeTable[cubeindex] == 0)
-            return 0;
-
-        /* Find the vertices where the surface intersects the cube */
-        //Why is C# like this
-        if ((DataTable.edgeTable[cubeindex] & 1) == 1)
-            vertlist[0].position =
-               VertexInterp(isolevel, grid.vertices[0].position, grid.vertices[1].position, grid.val[0], grid.val[1], false);
-        if ((DataTable.edgeTable[cubeindex] & 2) == 2)
-            vertlist[1].position =
-               VertexInterp(isolevel, grid.vertices[1].position, grid.vertices[2].position, grid.val[1], grid.val[2], false);
-        if ((DataTable.edgeTable[cubeindex] & 4) == 4)
-            vertlist[2].position =
-               VertexInterp(isolevel, grid.vertices[2].position, grid.vertices[3].position, grid.val[2], grid.val[3], false);
-        if ((DataTable.edgeTable[cubeindex] & 8) == 8)
-            vertlist[3].position =
-               VertexInterp(isolevel, grid.vertices[3].position, grid.vertices[0].position, grid.val[3], grid.val[0], false);
-        if ((DataTable.edgeTable[cubeindex] & 16) == 16)
-            vertlist[4].position =
-               VertexInterp(isolevel, grid.vertices[4].position, grid.vertices[5].position, grid.val[4], grid.val[5], false);
-        if ((DataTable.edgeTable[cubeindex] & 32) == 32)
-            vertlist[5].position =
-               VertexInterp(isolevel, grid.vertices[5].position, grid.vertices[6].position, grid.val[5], grid.val[6], false);
-        if ((DataTable.edgeTable[cubeindex] & 64) == 64)
-            vertlist[6].position =
-               VertexInterp(isolevel, grid.vertices[6].position, grid.vertices[7].position, grid.val[6], grid.val[7], false);
-        if ((DataTable.edgeTable[cubeindex] & 128) == 128)
-            vertlist[7].position =
-               VertexInterp(isolevel, grid.vertices[7].position, grid.vertices[4].position, grid.val[7], grid.val[4], false);
-        if ((DataTable.edgeTable[cubeindex] & 256) == 256)
-            vertlist[8].position =
-               VertexInterp(isolevel, grid.vertices[0].position, grid.vertices[4].position, grid.val[0], grid.val[4], false);
-        if ((DataTable.edgeTable[cubeindex] & 512) == 512)
-            vertlist[9].position =
-               VertexInterp(isolevel, grid.vertices[1].position, grid.vertices[5].position, grid.val[1], grid.val[5], false);
-        if ((DataTable.edgeTable[cubeindex] & 1024) == 1024)
-            vertlist[10].position =
-               VertexInterp(isolevel, grid.vertices[2].position, grid.vertices[6].position, grid.val[2], grid.val[6], false);
-        if ((DataTable.edgeTable[cubeindex] & 2048) == 2048)
-            vertlist[11].position =
-               VertexInterp(isolevel, grid.vertices[3].position, grid.vertices[7].position, grid.val[3], grid.val[7], false);
-
-        TRIANGLE[] triangles = { new TRIANGLE(), new TRIANGLE(), new TRIANGLE() };
-
-        /* Create the triangle */
-        uint ntriang = 0;
-        for (uint i = 0; DataTable.triTable[cubeindex, i] != -1; i += 3)
+        Debug.Log("examiniedMatrix");
+        for (uint i = 0; i < examinedMatrix.GetLength(0); i++)
         {
-            triangles[ntriang].vertices[0].position = vertlist[DataTable.triTable[cubeindex,i]].position;
-            triangles[ntriang].vertices[1].position = vertlist[DataTable.triTable[cubeindex,i + 1]].position;
-            triangles[ntriang].vertices[2].position = vertlist[DataTable.triTable[cubeindex,i + 2]].position;
-            ntriang++;
+            for (uint j = 0; j < examinedMatrix.GetLength(1); j++)
+            {
+                for (uint k = 0; k < examinedMatrix.GetLength(2); k++)
+                {
+                    Debug.Log("examiniedMatrix Value [" + i.ToString() + "," + j.ToString() + "," + k.ToString() + "]");
+                    Debug.Log(examinedMatrix[i, j, k]);
+                }
+            }
         }
 
-        return (ntriang);
+        grid.val = new float[8] { 
+            examinedMatrix[x, y, z], //0 point
+            examinedMatrix[(x + 1), y, z], //1 x point
+            examinedMatrix[(x + 1), (y + 1), z], //1 y and 1 x point
+            examinedMatrix[x, (y + 1), z], //1 y point
+            examinedMatrix[x, y, (z + 1)], //1 z point
+            examinedMatrix[(x + 1), y, (z + 1)], //1 x and 1 z
+            examinedMatrix[(x + 1), (y + 1), (z + 1)],// 1 x,y, and z
+            examinedMatrix[x, y + 1, (z + 1)]//1 x and 1 y
+        };
+
+        Debug.Log("Gridval creation");
+        for (uint n = 0; n < grid.val.Length; n++)
+        {
+            Debug.Log("GridVal " + n.ToString());
+            Debug.Log(grid.val[n]);
+        }
+
+        grid.vertices = new XYZ[8];
+        grid.vertices[0].position = new Vector3(x, y, z);
+        grid.vertices[1].position = new Vector3((x + 1), y, z);
+        grid.vertices[2].position = new Vector3((x + 1), (y + 1), z);
+        grid.vertices[3].position = new Vector3(x, (y + 1), z);
+        grid.vertices[4].position = new Vector3(x, y, (z + 1));
+        grid.vertices[5].position = new Vector3((x + 1), y, (z + 1));
+        grid.vertices[6].position = new Vector3((x + 1), (y + 1), (z + 1));
+        grid.vertices[7].position = new Vector3(x, y + 1, (z + 1));
+        
+
+        Debug.Log("Gridvert creation");
+        for (uint n = 0; n < grid.val.Length; n++)
+        {
+            Debug.Log("Gridvert " + n.ToString());
+            Debug.Log(grid.vertices[n].position);
+        }
+
+        return grid;
     }
 
-    Vector3 VertexInterp(float isolevel, Vector3 pos1, Vector3 pos2, float valuePos1, float valuePos2, bool interpolate)
+    Mesh meshBuild()
+    {
+
+        float isolevel = 0.5f;
+
+        float[,,] testArray = { { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } }, { { 0, 0, 0 }, { 0, 1, 0}, { 0 , 0 ,0 } }, { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } } };
+
+        Debug.Log("Start Mesh Build");
+        Debug.Log(testArray);
+
+        Mesh mesh = new Mesh();
+
+        Debug.Log("Array Sizes");
+        Debug.Log("x");
+        Debug.Log(testArray.GetLength(0));
+        Debug.Log("y");
+        Debug.Log(testArray.GetLength(1));
+        Debug.Log("z");
+        Debug.Log(testArray.GetLength(2));
+
+        for (int z = 0; z < (testArray.GetLength(0) - 1); z++)
+        {
+            for (int y = 0; y < (testArray.GetLength(1) - 1); y++)
+            {
+                for (int x = 0; x < (testArray.GetLength(2) - 1); x++)
+                {
+                    GRIDCELL grid = makeGrid(testArray, z, y, x);
+
+                    byte cubeindex = 0;
+                    if (grid.val[0] < isolevel) cubeindex |= 1;
+                    if (grid.val[1] < isolevel) cubeindex |= 2;
+                    if (grid.val[2] < isolevel) cubeindex |= 4;
+                    if (grid.val[3] < isolevel) cubeindex |= 8;
+                    if (grid.val[4] < isolevel) cubeindex |= 16;
+                    if (grid.val[5] < isolevel) cubeindex |= 32;
+                    if (grid.val[6] < isolevel) cubeindex |= 64;
+                    if (grid.val[7] < isolevel) cubeindex |= 128;
+
+                    /* Cube is entirely in/out of the surface */
+                    if (DataTable.edgeTable[cubeindex] == 0) ;
+
+                    Debug.Log("GridVal");
+                    for (uint n = 0; n < grid.val.Length; n++)
+                    {
+                        Debug.Log("GridVal " + n.ToString());
+                        Debug.Log(grid.val[n]);
+                    }
+
+                    /* Find the vertices where the surface intersects the cube */
+                    //Why is C# like this
+                    XYZ[] vertlist = new XYZ[12];
+                    if ((DataTable.edgeTable[cubeindex] & 1) == 1)
+                        vertlist[0].position =
+                           VertexInterp(isolevel, grid.vertices[0].position, grid.vertices[1].position, grid.val[0], grid.val[1]);
+                    if ((DataTable.edgeTable[cubeindex] & 2) == 2)
+                        vertlist[1].position =
+                           VertexInterp(isolevel, grid.vertices[1].position, grid.vertices[2].position, grid.val[1], grid.val[2]);
+                    if ((DataTable.edgeTable[cubeindex] & 4) == 4)
+                        vertlist[2].position =
+                           VertexInterp(isolevel, grid.vertices[2].position, grid.vertices[3].position, grid.val[2], grid.val[3]);
+                    if ((DataTable.edgeTable[cubeindex] & 8) == 8)
+                        vertlist[3].position =
+                           VertexInterp(isolevel, grid.vertices[3].position, grid.vertices[0].position, grid.val[3], grid.val[0]);
+                    if ((DataTable.edgeTable[cubeindex] & 16) == 16)
+                        vertlist[4].position =
+                           VertexInterp(isolevel, grid.vertices[4].position, grid.vertices[5].position, grid.val[4], grid.val[5]);
+                    if ((DataTable.edgeTable[cubeindex] & 32) == 32)
+                        vertlist[5].position =
+                           VertexInterp(isolevel, grid.vertices[5].position, grid.vertices[6].position, grid.val[5], grid.val[6]);
+                    if ((DataTable.edgeTable[cubeindex] & 64) == 64)
+                        vertlist[6].position =
+                           VertexInterp(isolevel, grid.vertices[6].position, grid.vertices[7].position, grid.val[6], grid.val[7]);
+                    if ((DataTable.edgeTable[cubeindex] & 128) == 128)
+                        vertlist[7].position =
+                           VertexInterp(isolevel, grid.vertices[7].position, grid.vertices[4].position, grid.val[7], grid.val[4]);
+                    if ((DataTable.edgeTable[cubeindex] & 256) == 256)
+                        vertlist[8].position =
+                           VertexInterp(isolevel, grid.vertices[0].position, grid.vertices[4].position, grid.val[0], grid.val[4]);
+                    if ((DataTable.edgeTable[cubeindex] & 512) == 512)
+                        vertlist[9].position =
+                           VertexInterp(isolevel, grid.vertices[1].position, grid.vertices[5].position, grid.val[1], grid.val[5]);
+                    if ((DataTable.edgeTable[cubeindex] & 1024) == 1024)
+                        vertlist[10].position =
+                           VertexInterp(isolevel, grid.vertices[2].position, grid.vertices[6].position, grid.val[2], grid.val[6]);
+                    if ((DataTable.edgeTable[cubeindex] & 2048) == 2048)
+                        vertlist[11].position =
+                           VertexInterp(isolevel, grid.vertices[3].position, grid.vertices[7].position, grid.val[3], grid.val[7]);
+
+                    Debug.Log("VertList position");
+                    for (uint n = 0; n < vertlist.Length; n++)
+                    {
+                        Debug.Log("VertList " + n.ToString());
+                        Debug.Log(vertlist[n].position);
+                    }
+
+                    /* Create the triangle */
+
+                    //The maximum number of triangles in a singe marching cube unit is 5
+                    List<TRIANGLE> triangles = new List<TRIANGLE>();
+                    //Must declare new XYZ to avoid error "object reference not set to instance of object
+                    //Can't declare new inside for loop as the context is only inside the for loop and I assume it's garbage collected after
+
+                    //This counts the number of triangles in a single cube unit
+                    int ntriang = 0;
+
+                    //It's loading them up into individual triangles to render
+                    //-1 is needed at the end of the table because it is the completion condition when iterating by 3
+                    for (uint i = 0; DataTable.triTable[cubeindex, i] != -1; i += 3)
+                    {
+                        Debug.Log("Cube Index");
+                        Debug.Log(cubeindex);
+                        Debug.Log("i iteration");
+                        Debug.Log(i);
+                        Debug.Log("tritable value");
+                        Debug.Log(DataTable.triTable[cubeindex, i]);
+                        //Must place this inside for loop to add reference to triangles within it. Without this or if this was outside of the for loop the object values would be 0,0,0
+                        TRIANGLE triangleLoop = new TRIANGLE();
+                        triangleLoop.vertices = new XYZ[3];
+                        
+                        triangleLoop.vertices[0].position = vertlist[DataTable.triTable[cubeindex, i]].position;
+                        triangleLoop.vertices[1].position = vertlist[DataTable.triTable[cubeindex, i + 1]].position;
+                        triangleLoop.vertices[2].position = vertlist[DataTable.triTable[cubeindex, i + 2]].position;
+
+                        //Used a list here because when previously trying to use an array here variables would not be assigned properly and instead external obj had default 0,0,0
+                        triangles.Add(triangleLoop);
+                        ntriang++;
+
+                    }
+
+                    Debug.Log(ntriang);
+
+                    Debug.Log("Triangles Array");
+                    for (int n = 0; n < ntriang; n+= 3)
+                    {
+                        Debug.Log("Triangle Point Values " + n.ToString());
+                        Debug.Log(triangles[n].vertices[0].position * 10);
+                        Debug.Log(triangles[n].vertices[1].position * 10);
+                        Debug.Log(triangles[n].vertices[2].position * 10);
+                    }
+
+                    List<Vector3> triangleList = new List<Vector3>(mesh.vertices);
+
+                    
+
+                    for (int n = 0; n < ntriang; n+= 3)
+                    {
+                        triangleList.Add(triangles[n].vertices[0].position * 10);
+                        triangleList.Add(triangles[n].vertices[1].position * 10);
+                        triangleList.Add(triangles[n].vertices[2].position * 10);
+                    }
+
+                    Debug.Log("Triangles Loaded");
+                    for (int n = 0; n < ntriang; n+= 3)
+                    {
+                        Debug.Log("Triangle Group Loaded: " + n.ToString());
+                        Debug.Log(triangleList[n]);
+                        Debug.Log(triangleList[n + 1]);
+                        Debug.Log(triangleList[n + 2]);
+                    }
+
+
+                    mesh.vertices = triangleList.ToArray();
+
+                    Debug.Log("Mesh Input");
+                    for (int n = 0; n < mesh.vertices.Length; n+= 3)
+                    {
+                        Debug.Log("Mesh Input Triangles: " + n.ToString());
+                        Debug.Log(mesh.vertices[n]);
+                        Debug.Log(mesh.vertices[n + 1]);
+                        Debug.Log(mesh.vertices[n + 2]);
+                    }
+
+                    List<int> trianglesSequence = new List<int>(mesh.triangles);
+
+                    for (int currentNumTriangles = mesh.triangles.Length; currentNumTriangles < ntriang; currentNumTriangles += 3)
+                    {
+                        trianglesSequence.Add(currentNumTriangles);
+                        trianglesSequence.Add(currentNumTriangles + 1);
+                        trianglesSequence.Add(currentNumTriangles + 2);
+                    }
+
+                    Debug.Log("Triangles Loaded");
+                    for (int n = 0; n < trianglesSequence.Count; n+= 3)
+                    {
+                        Debug.Log("Triangle Group Order" + n.ToString());
+                        Debug.Log(trianglesSequence[n]);
+                        Debug.Log(trianglesSequence[n + 1]);
+                        Debug.Log(trianglesSequence[n + 2]);
+                    }
+
+
+
+                    mesh.triangles = trianglesSequence.ToArray();
+
+                    Debug.Log("Mesh Triangles");
+                    for (int n = 0; n < mesh.triangles.Length; n+= 3)
+                    {
+                        Debug.Log("Mesh Triangles Order: " + n.ToString());
+                        Debug.Log(mesh.triangles[n]);
+                        Debug.Log(mesh.triangles[n + 1]);
+                        Debug.Log(mesh.triangles[n + 2]);
+                    }
+
+                }
+            }
+        }
+        Debug.Log(mesh.vertices);
+        Debug.Log(mesh.triangles);
+        Debug.Log("Hello");
+        return mesh;
+    }
+
+    //This function interpolated the grid vertices and returns the interpolated edge point
+    //It first check to see if one value is very close to the isolevel and returns that value or if both values are nearly adentical
+    //
+    Vector3 VertexInterp(float isolevel, Vector3 pos1, Vector3 pos2, float valuePos1, float valuePos2)
     {
         float mu;
         XYZ point = new XYZ();
@@ -130,7 +313,7 @@ public class MarchingCube : MonoBehaviour
         if (Math.Abs(isolevel - valuePos2) < 0.00001)
             return (pos2);
         if (Math.Abs(valuePos1 - valuePos2) < 0.00001)
-            return (pos1);
+            return ((pos1 + pos2)/2);
         mu = (isolevel - valuePos1) / (valuePos2 - valuePos1);
         point.position.x = pos1.x + mu * (pos2.x - pos1.x);
         point.position.y = pos1.y + mu * (pos2.y - pos1.y);
@@ -145,6 +328,19 @@ public class MarchingCube : MonoBehaviour
     void Start()
     {
         mesh = new Mesh();
+
+        mesh.Clear();
+        mesh = meshBuild();
+        GetComponent<MeshFilter>().mesh = mesh;
+        for (int n = 0; n < mesh.vertices.Length; n++)
+        {
+            Debug.Log(mesh.vertices[n]);
+        }
+        for (int n = 0; n < mesh.triangles.Length; n++)
+        {
+            Debug.Log(mesh.triangles[n]);
+        }
+        
     }
 
     // Update is called once per frame
