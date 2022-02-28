@@ -92,15 +92,16 @@ public class MarchingCube : MonoBehaviour
     {
 
         float isolevel = 0.5f;
+        //Human [x,y,z]
 
-        float[,,] testArray = { { { 0, 0, 0 }, { 0, 1, 0 }, { 0, 0, 0 } }, { { 0, 0, 0 }, { 0, 1, 0}, { 0 , 0 ,0 } }, { { 1, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } } };
+        float[,,] testArray = { { { 0, 1, 1 }, { 0, 0, 0 }, { 0, 0, 0 } }, { { 0, 1, 0 }, { 0, 0, 0}, { 0 ,1 ,0 } }, { { 0, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } } };
 
         Debug.Log("Start Mesh Build");
         Debug.Log(testArray);
 
         Mesh mesh = new Mesh();
 
-        List<Vector3> triangleList = new List<Vector3>(mesh.vertices);
+        List<Vector3> triangleVertList = new List<Vector3>(mesh.vertices);
         List<int> trianglesSequence = new List<int>(mesh.triangles);
 
         Debug.Log("Array Sizes");
@@ -206,6 +207,8 @@ public class MarchingCube : MonoBehaviour
                         Debug.Log(i);
                         Debug.Log("tritable value");
                         Debug.Log(DataTable.triTable[cubeindex, i]);
+                        Debug.Log(DataTable.triTable[cubeindex, (i+1)]);
+                        Debug.Log(DataTable.triTable[cubeindex, (i+2)]);
                         //Must place this inside for loop to add reference to triangles within it. Without this or if this was outside of the for loop the object values would be 0,0,0
                         TRIANGLE triangleLoop = new TRIANGLE();
                         triangleLoop.vertices = new XYZ[3];
@@ -223,7 +226,8 @@ public class MarchingCube : MonoBehaviour
                     Debug.Log(ntriang);
 
                     Debug.Log("Triangles Array");
-                    for (int n = 0; n < ntriang; n+= 3)
+                    //n represents number of triangles
+                    for (int n = 0; n < ntriang; n++)
                     {
                         Debug.Log("Triangle Point Values " + n.ToString());
                         Debug.Log(triangles[n].vertices[0].position * 10);
@@ -231,24 +235,24 @@ public class MarchingCube : MonoBehaviour
                         Debug.Log(triangles[n].vertices[2].position * 10);
                     }
 
-                    
 
-                    
 
-                    for (int n = 0; n < ntriang; n+= 3)
+
+                    //n represents num of triangles
+                    for (int n = 0; n < ntriang; n++)
                     {
-                        triangleList.Add(triangles[n].vertices[0].position * 10);
-                        triangleList.Add(triangles[n].vertices[1].position * 10);
-                        triangleList.Add(triangles[n].vertices[2].position * 10);
+                        triangleVertList.Add(triangles[n].vertices[0].position * 10);
+                        triangleVertList.Add(triangles[n].vertices[1].position * 10);
+                        triangleVertList.Add(triangles[n].vertices[2].position * 10);
                     }
 
                     Debug.Log("Triangles Loaded");
-                    for (int n = 0; n < ntriang; n+= 3)
+                    for (int n = 0; n < (ntriang * 3); n+= 3)
                     {
                         Debug.Log("Triangle Group Loaded: " + n.ToString());
-                        Debug.Log(triangleList[n]);
-                        Debug.Log(triangleList[n + 1]);
-                        Debug.Log(triangleList[n + 2]);
+                        Debug.Log(triangleVertList[n]);
+                        Debug.Log(triangleVertList[n + 1]);
+                        Debug.Log(triangleVertList[n + 2]);
                     }
 
 
@@ -286,20 +290,22 @@ public class MarchingCube : MonoBehaviour
                         Debug.Log(trianglesSequence[n + 2]);
                     }
 
+                    Debug.Log(triangleVertList.Count);
+
+                    Debug.Log(trianglesSequence.Count);
+
                 }
             }
         }
-        for (int n = 0; n < triangleList.Count; n++)
+        for (int n = 0; n < triangleVertList.Count; n++)
         {
-            Debug.Log(triangleList[n]);
+            Debug.Log(triangleVertList[n]);
         }
-        for (int n = 0; n < trianglesSequence.Count; n++)
-        {
-            Debug.Log(trianglesSequence[n]);
-        }
+        Debug.Log(triangleVertList.Count);
+        Debug.Log(trianglesSequence.Count);
         Debug.Log("Hello");
 
-        mesh.vertices = triangleList.ToArray();
+        mesh.vertices = triangleVertList.ToArray();
         mesh.triangles = trianglesSequence.ToArray();
 
         return mesh;
