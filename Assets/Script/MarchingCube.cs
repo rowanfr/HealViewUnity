@@ -93,8 +93,8 @@ public class MarchingCube : MonoBehaviour
 
         float isolevel = 0.5f;
         //Human [x,y,z]
-
-        float[,,] testArray = { { { 0, 1, 1 }, { 0, 0, 0 }, { 0, 0, 0 } }, { { 0, 1, 0 }, { 0, 0, 0}, { 0 ,1 ,0 } }, { { 0, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } } };
+        //The 100 and 1 should be at different heights if interpolation is working as expected
+        float[,,] testArray = { { { 0, 100, 1 }, { 0, 0, 0 }, { 0, 0, 0 } }, { { 0, 1, 0 }, { 0, 0, 0}, { 0 ,1 ,0 } }, { { 0, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } } };
 
         Debug.Log("Start Mesh Build");
         Debug.Log(testArray);
@@ -141,8 +141,10 @@ public class MarchingCube : MonoBehaviour
                     }
 
                     /* Find the vertices where the surface intersects the cube */
-                    //Why is C# like this
+                    //Why is C# like this, one has to set == to a value instead of leaving if(Type)
                     XYZ[] vertlist = new XYZ[12];
+                    //One inputs the grid components into a vertexInterp function to get an actual vertex point to make the triangles later on
+                    //Consider vertexList as being the edges of the current scanning grid and the output of VertexInterp being the position on that edge
                     if ((DataTable.edgeTable[cubeindex] & 1) == 1)
                         vertlist[0].position =
                            VertexInterp(isolevel, grid.vertices[0].position, grid.vertices[1].position, grid.val[0], grid.val[1]);
@@ -318,14 +320,55 @@ public class MarchingCube : MonoBehaviour
     {
         float mu;
         XYZ point = new XYZ();
-        
+        //Due to the edge being determined here we know that one value is above the isolevel while one value is below, but we don't know which
+        //Additionally this presumption comes from the marching cube tables that lead to this function call.
+
+        //if value at pos 1 = value at pos 2 return midpoint between them, remember that Math.Abs is involved
+        if (Math.Abs(valuePos1 - valuePos2) < 0.00001)
+            return ((pos1 + pos2) / 2);
+
+        //if isolevel = valuePos1, return Pos1, remember that Math.Abs is involved
+        /*This works becsause this is effectively stating on the edge in question if val1 and val2 aren't equal and we know that 
+         * 1 val is above iso and one is below then we know that if one val is equal to iso then the position of the edge
+         * should be right at the point on the grid. In this case we are testing for val1.
+        */
         if (Math.Abs(isolevel - valuePos1) < 0.00001)
             return (pos1);
+
+        //if isolevel = valuePos2, return Pos2, remember that Math.Abs is involved
+        /*This works becsause this is effectively stating on the edge in question if val1 and val2 aren't equal and we know that 
+         * 1 val is above iso and one is below then we know that if one val is equal to iso then the position of the edge
+         * should be right at the point on the grid. In this case we are testing for val2.
+        */
         if (Math.Abs(isolevel - valuePos2) < 0.00001)
             return (pos2);
-        if (Math.Abs(valuePos1 - valuePos2) < 0.00001)
-            return ((pos1 + pos2)/2);
+
+
+        /*mu = gradient for edge position placement
+         * we have 2 values at point 1 and 2. We know that one of them is above the isolevel and one is below.
+         * mu = (isolevel - valuePos1) / (valuePos2 - valuePos1) is first looking at the difference between the isolevel and the value at pos1
+         * it then divides this by the total value from these positions. 
+         * This is to calculate the point between a linear gradient of these 2 values that it would equal the isolevel.
+         * Lets first consider our starting point to be P1. P1 has value V1
+         * P2 has value V2. We want to know where a linear gradient between these 2 values equals the isolavel so
+         * y = mx + c
+         * c = V1 as it is our initial offset for the y axis (y is matrix intensity)
+         * m = Rise / Run = (V2 - V1)/d
+         * y = Isolevel
+         * Therefore:
+         * Isolevel = ((V2 - V1)/d)*x + V1 from the rise/run idea multiplied by a factor of x
+         * with d being edge distance and x being the actual amount of distance needed to travel
+         * (This currently assumes that V1 > isovalue and V2 < isovalue)
+         * ((Isolevel - V1)*d) / (V2 - V1) = x
+         * d = determinant(pos2 - pos1) or in just one axis: d = (pos2 - pos1)
+         * we also need to after this add pos1 as our origin point to ensure that x of the vertex distance on the edge
+         * is applied at the correct location, P1. Otherwise it will have no offset and will be applied offset from the origin 0, rather than it's actual position.
+         * mu = (Isolevel - V1) / (V2 - V1)
+         * So our final point is given by P1 + x = P1 + (Isolevel - V1)*d / (V2 - V1) = mu * d = mu * (pos2 - pos1)
+         */
         mu = (isolevel - valuePos1) / (valuePos2 - valuePos1);
+        //(pos2.x - pos1.x) is edge midpoint x vector
+        //that times mu is
         point.position.x = pos1.x + mu * (pos2.x - pos1.x);
         point.position.y = pos1.y + mu * (pos2.y - pos1.y);
         point.position.z = pos1.z + mu * (pos2.z - pos1.z);
