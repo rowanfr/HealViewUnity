@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Microsoft.MixedReality.Toolkit.UI;
 using System;
 
 [RequireComponent(typeof(MeshFilter))]
@@ -88,13 +89,12 @@ public class MarchingCube : MonoBehaviour
         return grid;
     }
 
-    Mesh meshBuild()
+    public Mesh meshBuild(float[,,] testArray, float isolevel)
     {
+        
 
-        float isolevel = 0.5f;
         //Human [x,y,z]
         //The 100 and 1 should be at different heights if interpolation is working as expected
-        float[,,] testArray = { { { 0, 100, 1 }, { 0, 0, 0 }, { 0, 0, 0 } }, { { 0, 1, 0 }, { 0, 0, 0}, { 0 ,1 ,0 } }, { { 0, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } } };
 
         Debug.Log("Start Mesh Build");
         Debug.Log(testArray);
@@ -141,44 +141,46 @@ public class MarchingCube : MonoBehaviour
                     }
 
                     /* Find the vertices where the surface intersects the cube */
-                    //Why is C# like this, one has to set == to a value instead of leaving if(Type)
+                    
                     XYZ[] vertlist = new XYZ[12];
                     //One inputs the grid components into a vertexInterp function to get an actual vertex point to make the triangles later on
                     //Consider vertexList as being the edges of the current scanning grid and the output of VertexInterp being the position on that edge
-                    if ((DataTable.edgeTable[cubeindex] & 1) == 1)
+                    //For legibility we can use (DataTable.edgeTable[cubeindex] & n) != 0  or (DataTable.edgeTable[cubeindex] & n) == n as both are testing the same thing
+                    //Why is C# like this, one has to set == to a value instead of leaving if(Type)
+                    if ((DataTable.edgeTable[cubeindex] & 1) != 0)
                         vertlist[0].position =
                            VertexInterp(isolevel, grid.vertices[0].position, grid.vertices[1].position, grid.val[0], grid.val[1]);
-                    if ((DataTable.edgeTable[cubeindex] & 2) == 2)
+                    if ((DataTable.edgeTable[cubeindex] & 2) != 0)
                         vertlist[1].position =
                            VertexInterp(isolevel, grid.vertices[1].position, grid.vertices[2].position, grid.val[1], grid.val[2]);
-                    if ((DataTable.edgeTable[cubeindex] & 4) == 4)
+                    if ((DataTable.edgeTable[cubeindex] & 4) != 0)
                         vertlist[2].position =
                            VertexInterp(isolevel, grid.vertices[2].position, grid.vertices[3].position, grid.val[2], grid.val[3]);
-                    if ((DataTable.edgeTable[cubeindex] & 8) == 8)
+                    if ((DataTable.edgeTable[cubeindex] & 8) != 0)
                         vertlist[3].position =
                            VertexInterp(isolevel, grid.vertices[3].position, grid.vertices[0].position, grid.val[3], grid.val[0]);
-                    if ((DataTable.edgeTable[cubeindex] & 16) == 16)
+                    if ((DataTable.edgeTable[cubeindex] & 16) != 0)
                         vertlist[4].position =
                            VertexInterp(isolevel, grid.vertices[4].position, grid.vertices[5].position, grid.val[4], grid.val[5]);
-                    if ((DataTable.edgeTable[cubeindex] & 32) == 32)
+                    if ((DataTable.edgeTable[cubeindex] & 32) != 0)
                         vertlist[5].position =
                            VertexInterp(isolevel, grid.vertices[5].position, grid.vertices[6].position, grid.val[5], grid.val[6]);
-                    if ((DataTable.edgeTable[cubeindex] & 64) == 64)
+                    if ((DataTable.edgeTable[cubeindex] & 64) != 0)
                         vertlist[6].position =
                            VertexInterp(isolevel, grid.vertices[6].position, grid.vertices[7].position, grid.val[6], grid.val[7]);
-                    if ((DataTable.edgeTable[cubeindex] & 128) == 128)
+                    if ((DataTable.edgeTable[cubeindex] & 128) != 0)
                         vertlist[7].position =
                            VertexInterp(isolevel, grid.vertices[7].position, grid.vertices[4].position, grid.val[7], grid.val[4]);
-                    if ((DataTable.edgeTable[cubeindex] & 256) == 256)
+                    if ((DataTable.edgeTable[cubeindex] & 256) != 0)
                         vertlist[8].position =
                            VertexInterp(isolevel, grid.vertices[0].position, grid.vertices[4].position, grid.val[0], grid.val[4]);
-                    if ((DataTable.edgeTable[cubeindex] & 512) == 512)
+                    if ((DataTable.edgeTable[cubeindex] & 512) != 0)
                         vertlist[9].position =
                            VertexInterp(isolevel, grid.vertices[1].position, grid.vertices[5].position, grid.val[1], grid.val[5]);
-                    if ((DataTable.edgeTable[cubeindex] & 1024) == 1024)
+                    if ((DataTable.edgeTable[cubeindex] & 1024) != 0)
                         vertlist[10].position =
                            VertexInterp(isolevel, grid.vertices[2].position, grid.vertices[6].position, grid.val[2], grid.val[6]);
-                    if ((DataTable.edgeTable[cubeindex] & 2048) == 2048)
+                    if ((DataTable.edgeTable[cubeindex] & 2048) != 0)
                         vertlist[11].position =
                            VertexInterp(isolevel, grid.vertices[3].position, grid.vertices[7].position, grid.val[3], grid.val[7]);
 
@@ -382,9 +384,9 @@ public class MarchingCube : MonoBehaviour
     void Start()
     {
         mesh = new Mesh();
-
+        float[,,] initialArray = { { { 0, 100, 1 }, { 0, 0, 0 }, { 0, 0, 0 } }, { { 0, 1, 0 }, { 0, 0, 0 }, { 0, 1, 0 } }, { { 0, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } } };
         mesh.Clear();
-        mesh = meshBuild();
+        mesh = meshBuild(initialArray, 0.5f);
         GetComponent<MeshFilter>().mesh = mesh;
         for (int n = 0; n < mesh.vertices.Length; n++)
         {
@@ -395,6 +397,29 @@ public class MarchingCube : MonoBehaviour
             Debug.Log(mesh.triangles[n]);
         }
         
+    }
+
+    [SerializeField]
+    private float num = 1;
+
+    public void OnSliderUpdated(SliderEventData eventData)
+    {
+        
+        num = eventData.NewValue;
+        Debug.Log(num);
+        int conversion = (int)(255f * num);
+        float[,,] initialArray = { { { Convert.ToSingle((conversion & 1)!=0), Convert.ToSingle((conversion & 2) != 0) }, { Convert.ToSingle((conversion & 4) != 0), Convert.ToSingle((conversion & 8) != 0) } }, { { Convert.ToSingle((conversion & 16) != 0), Convert.ToSingle((conversion & 32) != 0) }, { Convert.ToSingle((conversion & 64) != 0), Convert.ToSingle((conversion & 128) != 0) } } };
+        mesh.Clear();
+        mesh = meshBuild(initialArray, 0.5f);
+        GetComponent<MeshFilter>().mesh = mesh;
+        for (int n = 0; n < mesh.vertices.Length; n++)
+        {
+            Debug.Log(mesh.vertices[n]);
+        }
+        for (int n = 0; n < mesh.triangles.Length; n++)
+        {
+            Debug.Log(mesh.triangles[n]);
+        }
     }
 
     // Update is called once per frame
