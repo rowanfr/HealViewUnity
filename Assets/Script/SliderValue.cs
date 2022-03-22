@@ -18,7 +18,8 @@ public class SliderValue : MonoBehaviour
 
         if (textMesh != null)
         {
-            textMesh.text = $"{eventData.NewValue:F2}";
+            textMesh.text = ((int)((eventData.NewValue)*255f)).ToString();
+
         }
     }
 

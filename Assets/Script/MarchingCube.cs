@@ -7,6 +7,22 @@ using System;
 [RequireComponent(typeof(MeshFilter))]
 public class MarchingCube : MonoBehaviour
 {
+
+    public ComputeShader MarchingCubeShader;
+
+    ComputeBuffer triangleBuffer;
+    ComputeBuffer pointsBuffer;
+    ComputeBuffer triCountBuffer;
+
+    
+
+    public void ShaderMeshBuild(double[,,] DICOMArray, double isolevel)
+    {
+        MarchingCubeShader.SetBuffer(0, "points", pointsBuffer);
+        MarchingCubeShader.SetBuffer(0, "triangles", triangleBuffer);
+        //MarchingCubeShader.SetInt("numPointsPerAxis", numPointsPerAxis);
+        //MarchingCubeShader.SetFloat("isoLevel", isoLevel);
+    }
     public struct XYZ
     {
         public Vector3 position;//3 array x,y,z in each of those values
@@ -21,7 +37,7 @@ public class MarchingCube : MonoBehaviour
     public struct GRIDCELL
     {
         public XYZ[] vertices;//8 array values for cube verts, x,y,z in each of those values
-        public float[] val;//8 val for
+        public double[] val;//8 val for
     }
 
     
@@ -32,7 +48,7 @@ public class MarchingCube : MonoBehaviour
 
     MarchingCubeTables DataTable = new MarchingCubeTables();
 
-    GRIDCELL makeGrid(float[,,] examinedMatrix, int x, int y, int z)
+    GRIDCELL makeGrid(double[,,] examinedMatrix, int x, int y, int z)
     {
         GRIDCELL grid = new GRIDCELL();
         //Must call new here as we are dynamically declaring space for array and the compiler doesn't infer that from setting it equal to an array
@@ -50,7 +66,7 @@ public class MarchingCube : MonoBehaviour
             }
         }
 
-        grid.val = new float[8] { 
+        grid.val = new double[8] { 
             examinedMatrix[x, y, z], //0 point
             examinedMatrix[(x + 1), y, z], //1 x point
             examinedMatrix[(x + 1), (y + 1), z], //1 y and 1 x point
@@ -89,7 +105,7 @@ public class MarchingCube : MonoBehaviour
         return grid;
     }
 
-    public Mesh meshBuild(float[,,] testArray, float isolevel)
+    public Mesh meshBuild(double[,,] testArray, double isolevel)
     {
         
 
@@ -131,7 +147,7 @@ public class MarchingCube : MonoBehaviour
                     if (grid.val[7] < isolevel) cubeindex |= 128;
 
                     /* Cube is entirely in/out of the surface */
-                    if (DataTable.edgeTable[cubeindex] == 0) ;
+                    if (DataTable.edgeTable[cubeindex] == 0);
 
                     Debug.Log("GridVal");
                     for (uint n = 0; n < grid.val.Length; n++)
@@ -318,9 +334,9 @@ public class MarchingCube : MonoBehaviour
     //This function interpolated the grid vertices and returns the interpolated edge point
     //It first check to see if one value is very close to the isolevel and returns that value or if both values are nearly adentical
     //
-    Vector3 VertexInterp(float isolevel, Vector3 pos1, Vector3 pos2, float valuePos1, float valuePos2)
+    Vector3 VertexInterp(double isolevel, Vector3 pos1, Vector3 pos2, double valuePos1, double valuePos2)
     {
-        float mu;
+        double mu;
         XYZ point = new XYZ();
         //Due to the edge being determined here we know that one value is above the isolevel while one value is below, but we don't know which
         //Additionally this presumption comes from the marching cube tables that lead to this function call.
@@ -371,9 +387,9 @@ public class MarchingCube : MonoBehaviour
         mu = (isolevel - valuePos1) / (valuePos2 - valuePos1);
         //(pos2.x - pos1.x) is edge midpoint x vector
         //that times mu is
-        point.position.x = pos1.x + mu * (pos2.x - pos1.x);
-        point.position.y = pos1.y + mu * (pos2.y - pos1.y);
-        point.position.z = pos1.z + mu * (pos2.z - pos1.z);
+        point.position.x = (float)(pos1.x + mu * (pos2.x - pos1.x));
+        point.position.y = (float)(pos1.y + mu * (pos2.y - pos1.y));
+        point.position.z = (float)(pos1.z + mu * (pos2.z - pos1.z));
 
         return point.position;
     }
@@ -384,7 +400,7 @@ public class MarchingCube : MonoBehaviour
     void Start()
     {
         mesh = new Mesh();
-        float[,,] initialArray = { { { 0, 100, 1 }, { 0, 0, 0 }, { 0, 0, 0 } }, { { 0, 1, 0 }, { 0, 0, 0 }, { 0, 1, 0 } }, { { 0, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } } };
+        double[,,] initialArray = { { { 0, 100, 1 }, { 0, 0, 0 }, { 0, 0, 0 } }, { { 0, 1, 0 }, { 0, 0, 0 }, { 0, 1, 0 } }, { { 0, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } } };
         mesh.Clear();
         mesh = meshBuild(initialArray, 0.5f);
         GetComponent<MeshFilter>().mesh = mesh;
@@ -399,16 +415,14 @@ public class MarchingCube : MonoBehaviour
         
     }
 
-    [SerializeField]
-    private float num = 1;
 
     public void OnSliderUpdated(SliderEventData eventData)
     {
         
-        num = eventData.NewValue;
+        var num = eventData.NewValue;
         Debug.Log(num);
         int conversion = (int)(255f * num);
-        float[,,] initialArray = { { { Convert.ToSingle((conversion & 1)!=0), Convert.ToSingle((conversion & 2) != 0) }, { Convert.ToSingle((conversion & 4) != 0), Convert.ToSingle((conversion & 8) != 0) } }, { { Convert.ToSingle((conversion & 16) != 0), Convert.ToSingle((conversion & 32) != 0) }, { Convert.ToSingle((conversion & 64) != 0), Convert.ToSingle((conversion & 128) != 0) } } };
+        double[,,] initialArray = { { { Convert.ToSingle((conversion & 1)!=0), Convert.ToSingle((conversion & 2) != 0) }, { Convert.ToSingle((conversion & 4) != 0), Convert.ToSingle((conversion & 8) != 0) } }, { { Convert.ToSingle((conversion & 16) != 0), Convert.ToSingle((conversion & 32) != 0) }, { Convert.ToSingle((conversion & 64) != 0), Convert.ToSingle((conversion & 128) != 0) } } };
         mesh.Clear();
         mesh = meshBuild(initialArray, 0.5f);
         GetComponent<MeshFilter>().mesh = mesh;
