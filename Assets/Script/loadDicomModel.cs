@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System;
 using System.IO;
 using UnityEngine;
+//For UnityEvents
+using UnityEngine.Events;
 using FellowOakDicom;
 using System.Threading.Tasks;
 
@@ -15,6 +17,8 @@ public class loadDicomModel : MonoBehaviour
 
     FileBrowser FileBrowserClassInstance = null;
     string localPath;
+
+    [SerializeField] private UnityEvent DICOMArrayHasValue;
     // Start is called before the first frame update
     public async void updateMesh()
     {
@@ -26,8 +30,10 @@ public class loadDicomModel : MonoBehaviour
         double[,,] DICOMArray;
         //Task.Run performs the task asynchronously in the background on the app thread so that it doesn't effect the UI thread
         DICOMArray = await Task.Run(() => getDICOMArray(localPath));
-        
-        Debug.Log(DICOMArray[255, 255, 100]);
+        if (DICOMArray != null)
+        {
+            DICOMArrayHasValue.Invoke();
+        }
 
     }
 
