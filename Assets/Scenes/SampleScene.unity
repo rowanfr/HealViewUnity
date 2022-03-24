@@ -1158,7 +1158,7 @@ MonoBehaviour:
   flatHandThreshold: 45
   followHandUntilFacingCamera: 0
   followHandCameraFacingThresholdAngle: 60
-  useGazeActivation: 0
+  useGazeActivation: 1
   eyeGazeProximityThreshold: 0.01
   headGazeProximityThreshold: 0.04
 --- !u!114 &561038473
@@ -2583,7 +2583,7 @@ MonoBehaviour:
   flatHandThreshold: 45
   followHandUntilFacingCamera: 0
   followHandCameraFacingThresholdAngle: 60
-  useGazeActivation: 0
+  useGazeActivation: 1
   eyeGazeProximityThreshold: 0.01
   headGazeProximityThreshold: 0.04
 --- !u!114 &956853690
