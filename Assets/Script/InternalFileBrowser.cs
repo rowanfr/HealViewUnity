@@ -4,6 +4,8 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEditor;
+using SimpleFileBrowser;
+
 
 #if WINDOWS_UWP
 using System;
@@ -15,16 +17,21 @@ using Windows.Storage.Pickers;
 #endif
 
 //Must attach script to unity object to enable function to be called as event
-public class FileBrowser : MonoBehaviour
+public class InternalFileBrowser : MonoBehaviour
 {
     public string path;
 
-    [SerializeField] private UnityEvent PathFound;
+    //use generic class of UnityEvent to pass path. Ensure that the dynamic function is selected in Unity editor rather than static function so that data can be passed in from script
+    [SerializeField]
+    private UnityEvent<string> PathFound;
 
-    void Start()
+    public void getBrowser()
     {
-#if UNITY_EDITOR
+#if UNITY_EDITOR || !UNITY_WSA_10_0
         path = EditorUtility.OpenFolderPanel("Select DICOM Folder", "", "");
+
+        
+
         //UNITY_WSA_10_0 	Scripting symbol for Universal Windows Platform. Additionally WINDOWS_UWP is defined when compiling C# files against .NET Core.
 #elif !UNITY_EDITOR && UNITY_WSA_10_0
         
@@ -47,12 +54,13 @@ public class FileBrowser : MonoBehaviour
         
 #endif
 
-        if (path != null)
+        if ((path != null) && (path != ""))
         {
-            PathFound.Invoke();
+            PathFound.Invoke(path);
         }
 
     }
+
 }
 
 /*
