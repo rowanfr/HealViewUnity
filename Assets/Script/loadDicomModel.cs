@@ -19,6 +19,8 @@ public class loadDicomModel : MonoBehaviour
     private GameObject selfGameObj;
     private Vector3[] globalVertices;
     private int[] globalTriangle;
+    MeshCollider objCollider;
+    bool meshFinishRendering = false;
 
     [SerializeField]
     private GameObject indicatorObject;
@@ -36,6 +38,7 @@ public class loadDicomModel : MonoBehaviour
         Debug.Log("Task Mid");
         mesh = new Mesh();
         mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+        objCollider = selfGameObj.GetComponent<MeshCollider>();
     }
 
     public async void updateDICOMFolderPath(string localPath)
@@ -85,6 +88,11 @@ public class loadDicomModel : MonoBehaviour
 
             mesh.vertices = globalVertices;
             mesh.triangles = globalTriangle;
+
+
+
+            objCollider.sharedMesh = mesh;
+            meshFinishRendering = true;
         }
         //await indicator.CloseAsync();
 
@@ -291,8 +299,6 @@ public class loadDicomModel : MonoBehaviour
 
         }
 
-        Debug.Log("PP Finish");
-        
         Debug.Log("Partial Finish");
         Debug.Log(vertices.Count);
         List<int> triangles = new List<int>();
@@ -337,7 +343,7 @@ public class loadDicomModel : MonoBehaviour
     public void Update()
     {
         // will make the mesh appear in the Scene at origin position
-        if (mesh != null)
+        if ( meshFinishRendering )
         {
             Debug.Log("ReachedRender");
             //This function renders for only 1 frame so it needs to be repeated with every update and update its location to the game object
