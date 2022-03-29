@@ -15,10 +15,10 @@ using Microsoft.MixedReality.Toolkit.UI;
 public class loadDicomModel : MonoBehaviour
 {
 
-    public Mesh mesh;
-    public GameObject selfGameObj;
-    public Vector3[] globalVertices;
-    public int[] globalTriangle;
+    private Mesh mesh;
+    private GameObject selfGameObj;
+    private Vector3[] globalVertices;
+    private int[] globalTriangle;
 
     [SerializeField]
     private GameObject indicatorObject;
@@ -27,12 +27,15 @@ public class loadDicomModel : MonoBehaviour
     [SerializeField] private UnityEvent DICOMArrayHasValue;
     // Start is called before the first frame update
 
+    [SerializeField] private Material material;
+    //This is the material to be referenced
     private void Start()
     {
         Debug.Log("Task Started");
         selfGameObj = GameObject.Find("DICOMMesh");
         Debug.Log("Task Mid");
-        mesh = selfGameObj.GetComponent<MeshFilter>().mesh;
+        mesh = new Mesh();
+        mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
     }
 
     public async void updateDICOMFolderPath(string localPath)
@@ -72,9 +75,14 @@ public class loadDicomModel : MonoBehaviour
                 Debug.Log(xfactor);
                 Debug.Log(yfactor);
                 Debug.Log(zfactor);
-
+                //factors are divided by 1000 as they are given in mm but unity operates on m
                 await Task.Run(() => DICOMMeshFunction(DICOMArray, 500d, xfactor/1000, yfactor / 1000, zfactor / 1000));
             }
+
+            
+
+            //
+
             mesh.vertices = globalVertices;
             mesh.triangles = globalTriangle;
         }
@@ -283,18 +291,17 @@ public class loadDicomModel : MonoBehaviour
 
         }
 
-        List<int> trianglesOrder = new List<int>();
         Debug.Log("PP Finish");
+        
+        Debug.Log("Partial Finish");
+        Debug.Log(vertices.Count);
+        List<int> triangles = new List<int>();
         for (int n = 0; n < vertices.Count; n++)
         {
-            trianglesOrder.Add(n);
+            triangles.Add(n);
         }
-        Debug.Log("Partial Finish");
-        Debug.Log(vertices.ToArray());
-        Debug.Log(trianglesOrder.ToArray());
-
+        globalTriangle = triangles.ToArray();
         globalVertices = vertices.ToArray();
-        globalTriangle = trianglesOrder.ToArray();
         Debug.Log("Finish");
     }
 
@@ -327,6 +334,16 @@ public class loadDicomModel : MonoBehaviour
         marchingCube.Release();
         marchingCube = null;
     }
+    public void Update()
+    {
+        // will make the mesh appear in the Scene at origin position
+        if (mesh != null)
+        {
+            Debug.Log("ReachedRender");
+            //This function renders for only 1 frame so it needs to be repeated with every update and update its location to the game object
+            Graphics.DrawMesh(mesh, selfGameObj.transform.position, selfGameObj.transform.rotation, material, 0);
+        }
+        
+    }
 
-    
 }
