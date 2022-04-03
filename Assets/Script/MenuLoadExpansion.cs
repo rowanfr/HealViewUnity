@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MenuPostFileExpansion : MonoBehaviour
+public class MenuLoadExpansion : MonoBehaviour
 {
     private GameObject quad;
     private GameObject closeButton;
