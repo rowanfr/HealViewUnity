@@ -6,8 +6,20 @@ using TMPro;
 
 public class SliderValue : MonoBehaviour
 {
+    private double max;
+    private double min;
+
     [SerializeField]
     private TextMeshPro textMesh = null;
+
+    public void setMax(double maxInput)
+    {
+        max = maxInput;
+    }
+    public void setMin(double mixInput)
+    {
+        min = mixInput;
+    }
 
     public void OnSliderUpdated(SliderEventData eventData)
     {
@@ -18,20 +30,9 @@ public class SliderValue : MonoBehaviour
 
         if (textMesh != null)
         {
-            textMesh.text = ((int)((eventData.NewValue)*255f)).ToString();
+            textMesh.text = (((eventData.NewValue) * (max - min)) + min).ToString();
 
         }
     }
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
-    }
 }

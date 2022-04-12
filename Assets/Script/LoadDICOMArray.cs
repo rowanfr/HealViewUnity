@@ -107,7 +107,7 @@ public class LoadDICOMArray : MonoBehaviour
         
 
     }
-
+    //This is within an async event so that it doesn't freeze the screen
     private double[,,] getDICOMArray(string path, bool fileExtension)
     {
         string[] files;
