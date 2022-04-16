@@ -12,13 +12,18 @@ public class SliderValue : MonoBehaviour
     [SerializeField]
     private TextMeshPro textMesh = null;
 
-    public void setMax(double maxInput)
+    public void setMaxMin(double maxInput, double minInput)
     {
         max = maxInput;
+        min = minInput;
+        Debug.Log("value set");
     }
-    public void setMin(double mixInput)
+
+    public double[] getMaxMin()
     {
-        min = mixInput;
+        
+        double[] maxmin  = { max, min};
+        return maxmin;
     }
 
     public void OnSliderUpdated(SliderEventData eventData)
@@ -31,7 +36,6 @@ public class SliderValue : MonoBehaviour
         if (textMesh != null)
         {
             textMesh.text = (((eventData.NewValue) * (max - min)) + min).ToString();
-
         }
     }
 
