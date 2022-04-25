@@ -3502,7 +3502,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 2032135315}
         m_TargetAssemblyTypeName: LoadDICOMArray, Assembly-CSharp
-        m_MethodName: updateDICOMArray
+        m_MethodName: unityVolumeRendering
         m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

@@ -7,6 +7,7 @@ using UnityEngine;
 using System.Threading.Tasks;
 using UnityEngine.Events;
 using Microsoft.MixedReality.Toolkit.UI;
+using UnityVolumeRendering;//Namespace for VolumeRenderedObject class
 
 public class LoadDICOMArray : MonoBehaviour
 {
@@ -30,6 +31,73 @@ public class LoadDICOMArray : MonoBehaviour
         LoadingIndicator.SetActive(false);
 
     }
+
+    public async void unityVolumeRendering(string localPath)
+    {
+        LoadingIndicator.SetActive(true);
+        //For some reason I can't get the component unless the gameobject is loaded so I set the indicator value here
+        indicator = LoadingIndicator.GetComponent<ProgressIndicatorLoadingBar>();
+
+        //Opens loading bar
+        await indicator.OpenAsync();
+        indicator.Message = "Loading Volume Render";
+
+        DespawnAllDatasets();
+
+        OnOpenDICOMDatasetResult(localPath);
+
+        //Closes loading bar
+        await indicator.CloseAsync();
+        LoadingIndicator.SetActive(false);
+    }
+
+    private void OnOpenDICOMDatasetResult(string localPath)
+    {
+        
+
+        //This is checking if the localPath contains files. If it does it tries to process them.
+        if (localPath != null)
+        {
+            List<string> fileList = new List<string>();
+            //This is checking if the localPath contains files that end in .dcm. It presumes all .dcm files are DICOM files
+            if (Directory.GetFiles(localPath, "*.dcm").Length > 0)
+            {
+                string[] files = Directory.GetFiles(localPath, "*.dcm");
+                fileList.AddRange(files);
+            }
+            //If their aren't any .dcm files then this presumes they are all DICOM files
+            else
+            {
+                string[] files = Directory.GetFiles(localPath);
+                fileList.AddRange(files);
+            }
+            //This organizes the file list as GetFiles is unordered. This also means that the sort function is the source of order
+            fileList.Sort();
+
+            IImageSequenceImporter importer = ImporterFactory.CreateImageSequenceImporter(ImageSequenceFormat.DICOM);
+            IEnumerable<IImageSequenceSeries> seriesList = importer.LoadSeries(fileList);
+            foreach (IImageSequenceSeries series in seriesList)
+            {
+                VolumeDataset dataset = importer.ImportSeries(series);
+                // Spawn the object
+                if (dataset != null)
+                {
+                    VolumeRenderedObject obj = VolumeObjectFactory.CreateObject(dataset);
+                    obj.transform.position = new Vector3(0, 0, 0);
+                }
+            }
+        }
+    }
+
+    private void DespawnAllDatasets()
+    {
+        VolumeRenderedObject[] volobjs = GameObject.FindObjectsOfType<VolumeRenderedObject>();
+        foreach (VolumeRenderedObject volobj in volobjs)
+        {
+            GameObject.Destroy(volobj.gameObject);
+        }
+    }
+
 
     //This is the start point for the loading of the DICOM Array
     public async void updateDICOMArray(string localPath)
