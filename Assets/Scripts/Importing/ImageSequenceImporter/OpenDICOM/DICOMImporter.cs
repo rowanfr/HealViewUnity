@@ -50,7 +50,7 @@ namespace UnityVolumeRendering
 
         public IEnumerable<IImageSequenceSeries> LoadSeries(IEnumerable<string> fileCandidates)
         {
-            DataElementDictionary dataElementDictionary = new DataElementDictionary();
+            DataElementDictionary dataElementDictionary = new DataElementDictionary();//Data element dictionary uses LoadFrom function
             UidDictionary uidDictionary = new UidDictionary();
             try
             {
@@ -164,9 +164,9 @@ namespace UnityVolumeRendering
 
             if (files[0].pixelSpacing > 0.0f)
             {
-                dataset.scaleX = files[0].pixelSpacing * dataset.dimX;
-                dataset.scaleY = files[0].pixelSpacing * dataset.dimY;
-                dataset.scaleZ = Mathf.Abs(files[files.Count - 1].location - files[0].location);
+                dataset.scaleX = files[0].pixelSpacing * dataset.dimX / 1000;// / 1000 as original scale is in mm while Unity scale is in m
+                dataset.scaleY = files[0].pixelSpacing * dataset.dimY / 1000;// / 1000 as original scale is in mm while Unity scale is in m
+                dataset.scaleZ = Mathf.Abs(files[files.Count - 1].location - files[0].location)/ 1000;//Added / 1000 as original scale is in mm while Unity scale is in m
             }
 
             dataset.FixDimensions();

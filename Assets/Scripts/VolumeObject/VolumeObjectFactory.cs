@@ -44,8 +44,9 @@ namespace UnityVolumeRendering
 
             if(dataset.scaleX != 0.0f && dataset.scaleY != 0.0f && dataset.scaleZ != 0.0f)
             {
-                float maxScale = Mathf.Max(dataset.scaleX, dataset.scaleY, dataset.scaleZ);
-                volObj.transform.localScale = new Vector3(dataset.scaleX / maxScale, dataset.scaleY / maxScale, dataset.scaleZ / maxScale);
+                //float maxScale = Mathf.Max(dataset.scaleX, dataset.scaleY, dataset.scaleZ);
+                //Original obj scale is 1,1,1 m. scale multiplies by those values to get the accurate values for TOTAL SPACE in x, y, and z
+                volObj.transform.localScale = new Vector3(dataset.scaleX, dataset.scaleY, dataset.scaleZ);//Changed this to not be / maxScale for each
             }
 
             return volObj;
