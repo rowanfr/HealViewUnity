@@ -74,9 +74,9 @@ public class LoadDICOMArray : MonoBehaviour
             //This organizes the file list as GetFiles is unordered. This also means that the sort function is the source of order
             fileList.Sort();
 
-            IImageSequenceImporter importer = ImporterFactory.CreateImageSequenceImporter(ImageSequenceFormat.DICOM);//Returns DICOM importer
+            DICOMImporter importer = new DICOMImporter();//Returns DICOM importer
             IEnumerable<IImageSequenceSeries> seriesList = importer.LoadSeries(fileList);//DicomImporter/LoadSeries
-            Debug.Log(seriesList.ToString());
+
             foreach (IImageSequenceSeries series in seriesList)
             {
                 VolumeDataset dataset = importer.ImportSeries(series);//DicomImporter/ImportSeries as VolumeDataset
