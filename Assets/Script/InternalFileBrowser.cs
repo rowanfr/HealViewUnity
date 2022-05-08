@@ -4,7 +4,6 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEditor;
-using SimpleFileBrowser;
 
 
 #if WINDOWS_UWP
