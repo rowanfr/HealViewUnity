@@ -10,6 +10,7 @@
 /[Ll]ogs/
 /[Mm]emoryCaptures/
 
+
 # Asset meta data should only be ignored when the corresponding asset is also ignored
 !/[Aa]ssets/**/*.meta
 
@@ -58,3 +59,6 @@ sysinfo.txt
 # Crashlytics generated file
 crashlytics-build.properties
 
+#This is a necessary to avoid the vuforia engine error "Exception: Unable to determine Vuforia extension type. Please reinstall or reimport Vuforia." however it is too large to upload to github
+#Make certain to include this file in all iterations of this project
+[Pp]ackages/com.ptc.vuforia.engine-10.6.3.tgz
