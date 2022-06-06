@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using UnityEngine;
+using Microsoft.MixedReality.Toolkit.UI;
 
 namespace UnityVolumeRendering
 {
@@ -31,8 +32,16 @@ namespace UnityVolumeRendering
 
         private Texture3D dataTexture = null;
         private Texture3D gradientTexture = null;
-        
-        
+
+        ProgressIndicatorLoadingBar indicator;
+        GameObject LoadingIndicator;
+
+
+        public void setIndicator(ProgressIndicatorLoadingBar setIndicator)
+        {
+            indicator = setIndicator;
+        }
+
         public Texture3D GetDataTexture()
         {
             if (dataTexture == null)
@@ -138,6 +147,7 @@ namespace UnityVolumeRendering
                 byte[] bytes = new byte[data.Length * sampleSize]; // This can cause OutOfMemoryException
                 for (int iData = 0; iData < data.Length; iData++)
                 {
+                    
                     float pixelValue = (float)(data[iData] - minValue) / maxRange;
                     byte[] pixelBytes = isHalfFloat ? BitConverter.GetBytes(Mathf.FloatToHalf(pixelValue)) : BitConverter.GetBytes(pixelValue);
 
@@ -157,6 +167,50 @@ namespace UnityVolumeRendering
             }
             texture.Apply();
             return texture;
+        }
+        
+
+        public byte[] CreateTextureByteArray(bool isHalfFloat)
+        {
+            //For some reason I can't get the component unless the gameobject is loaded so I set the indicator value here
+            
+            /*TextureFormat texformat = SystemInfo.SupportsTextureFormat(TextureFormat.RHalf) ? TextureFormat.RHalf : TextureFormat.RFloat;
+            Texture3D texture = new Texture3D(dimX, dimY, dimZ, texformat, false);
+            texture.wrapMode = TextureWrapMode.Clamp;*/
+
+            float minValue = GetMinDataValue();
+            float maxValue = GetMaxDataValue();
+            float maxRange = maxValue - minValue;
+
+            //bool isHalfFloat = texture.format == TextureFormat.RHalf;
+            /*try
+            {*/
+                // Create a byte array for filling the texture. Store has half (16 bit) or single (32 bit) float values.
+                int sampleSize = isHalfFloat ? 2 : 4;
+                byte[] bytes = new byte[data.Length * sampleSize]; // This can cause OutOfMemoryException
+                for (int iData = 0; iData < data.Length; iData++)
+                {
+                    indicator.Progress = (float)iData / (float)data.Length;
+                    float pixelValue = (float)(data[iData] - minValue) / maxRange;
+                    byte[] pixelBytes = isHalfFloat ? BitConverter.GetBytes(Mathf.FloatToHalf(pixelValue)) : BitConverter.GetBytes(pixelValue);
+
+                    Array.Copy(pixelBytes, 0, bytes, iData * sampleSize, sampleSize);
+                }
+            return bytes;
+
+                //texture.SetPixelData(bytes, 0);
+            //}
+            
+            /*catch (OutOfMemoryException ex)
+            {
+            Debug.LogWarning("Out of memory when creating texture. Using fallback method.");
+            for (int x = 0; x < dimX; x++)
+                for (int y = 0; y < dimY; y++)
+                    for (int z = 0; z < dimZ; z++)
+                        texture.SetPixel(x, y, z, new Color((float)(data[x + y * dimX + z * (dimX * dimY)] - minValue) / maxRange, 0.0f, 0.0f, 0.0f));
+            //}*/
+            //texture.Apply();
+            //return texture;
         }
 
         private Texture3D CreateGradientTextureInternal() 

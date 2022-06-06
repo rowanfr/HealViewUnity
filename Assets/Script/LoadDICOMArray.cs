@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using UnityEngine.Events;
 using Microsoft.MixedReality.Toolkit.UI;
 using UnityVolumeRendering;//Namespace for VolumeRenderedObject class
+using System.Linq;
 
 public class LoadDICOMArray : MonoBehaviour
 {
@@ -20,7 +21,12 @@ public class LoadDICOMArray : MonoBehaviour
 
 
     [SerializeField]
-    private UnityEvent<double[,,], float, float, float> ArrayWithDetailsFound;
+    //private UnityEvent<double[,,], float, float, float> ArrayWithDetailsFound;
+    private UnityEvent fileProcessed;
+
+    [SerializeField]
+    //private UnityEvent<double[,,], float, float, float> ArrayWithDetailsFound;
+    private UnityEvent objCreated;
 
     public void Start()
     {
@@ -35,26 +41,52 @@ public class LoadDICOMArray : MonoBehaviour
     public async void unityVolumeRendering(string localPath)
     {
         LoadingIndicator.SetActive(true);
+
         //For some reason I can't get the component unless the gameobject is loaded so I set the indicator value here
         indicator = LoadingIndicator.GetComponent<ProgressIndicatorLoadingBar>();
 
         //Opens loading bar
         await indicator.OpenAsync();
-        indicator.Message = "Loading Volume Render";
+        
 
-        DespawnAllDatasets();
+        //await Task.Run(() => OnOpenDICOMDatasetResult(localPath));
+        VolumeDataset blankDataset = new VolumeDataset();
+        indicator.Message = "Loading Model: Dicom File Slices";
+        VolumeDataset[] allDatasets = await Task.Run(() => OnOpenDICOMDatasetResult(localPath, blankDataset));
 
-        OnOpenDICOMDatasetResult(localPath);
+        indicator.Message = "Loading Model";
+        // Spawn the object
+        if (allDatasets != null)
+        {
+            for(int n = 0; n < allDatasets.Length; n++)
+            {
+                var dimX = allDatasets[n].dimX;
+                var dimY = allDatasets[n].dimY;
+                var dimZ = allDatasets[n].dimZ;
+                TextureFormat texformat = SystemInfo.SupportsTextureFormat(TextureFormat.RHalf) ? TextureFormat.RHalf : TextureFormat.RFloat;
+                Texture3D texture = new Texture3D(dimX, dimY, dimZ, texformat, false);
+                texture.wrapMode = TextureWrapMode.Clamp;
+                bool isHalfFloat = texformat == TextureFormat.RHalf;
+                indicator.Message = "Loading Model " + (n + 1).ToString() +  ": Volume Texture";
+                allDatasets[n].setIndicator(indicator);
+                byte[] textureByteArray = await Task.Run(() => allDatasets[n].CreateTextureByteArray(isHalfFloat));
+                texture.SetPixelData(textureByteArray, 0);
+                texture.Apply();
+                
+                VolumeRenderedObject obj = VolumeObjectFactory.CreateObjectWTexture(allDatasets[n], texture);
+                obj.transform.position = new Vector3(0, 0, 0);
+            }
+        }
 
         //Closes loading bar
         await indicator.CloseAsync();
         LoadingIndicator.SetActive(false);
+        fileProcessed.Invoke();
     }
 
-    private void OnOpenDICOMDatasetResult(string localPath)
+    private VolumeDataset[] OnOpenDICOMDatasetResult(string localPath, VolumeDataset blankDataset)
     {
-        
-
+        Debug.Log("Got to beginning of loading Dataset from file");
         //This is checking if the localPath contains files. If it does it tries to process them.
         if (localPath != null)
         {
@@ -75,18 +107,25 @@ public class LoadDICOMArray : MonoBehaviour
             fileList.Sort();
 
             DICOMImporter importer = new DICOMImporter();//Returns DICOM importer
-            IEnumerable<IImageSequenceSeries> seriesList = importer.LoadSeries(fileList);//DicomImporter/LoadSeries
+            importer.setIndicator(indicator);
+            IImageSequenceSeries[] seriesList = importer.LoadSeries(fileList).ToArray();//DicomImporter/LoadSeries
+            VolumeDataset[] allDatasets = new VolumeDataset[seriesList.Length];
+            
+            
 
-            foreach (IImageSequenceSeries series in seriesList)
+            for (int n = 0; n < seriesList.Length; n++)
             {
-                VolumeDataset dataset = importer.ImportSeries(series);//DicomImporter/ImportSeries as VolumeDataset
-                // Spawn the object
-                if (dataset != null)
-                {
-                    VolumeRenderedObject obj = VolumeObjectFactory.CreateObject(dataset);
-                    obj.transform.position = new Vector3(0, 0, 0);
-                }
+                indicator.Progress = (float)n / (float) seriesList.Length;
+                Debug.Log(n);
+
+                allDatasets[n] = importer.ImportSeries(seriesList[n], blankDataset);//DicomImporter/ImportSeries as VolumeDataset
+                
             }
+            return allDatasets;
+        }
+        else
+        {
+            return null;
         }
     }
 
@@ -171,7 +210,7 @@ public class LoadDICOMArray : MonoBehaviour
         await indicator.CloseAsync();
         LoadingIndicator.SetActive(false);
 
-        ArrayWithDetailsFound.Invoke(DICOMArray, xfactor, yfactor, zfactor);
+        //ArrayWithDetailsFound.Invoke(DICOMArray, xfactor, yfactor, zfactor);
 
         
 

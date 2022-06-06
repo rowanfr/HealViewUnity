@@ -14,16 +14,6 @@ namespace UnityVolumeRendering
             DatasetType datasetType = DatasetImporterUtility.GetDatasetType(filePath);
             switch (datasetType)
             {
-                case DatasetType.Raw:
-                    {
-                        RAWDatasetImporterEditorWindow wnd = (RAWDatasetImporterEditorWindow)EditorWindow.GetWindow(typeof(RAWDatasetImporterEditorWindow));
-                        if (wnd != null)
-                            wnd.Close();
-
-                        wnd = new RAWDatasetImporterEditorWindow(filePath);
-                        wnd.Show();
-                        break;
-                    }
                 case DatasetType.DICOM:
                 case DatasetType.ImageSequence:
                     {

@@ -19,16 +19,6 @@ namespace UnityVolumeRendering
 
             
             // Show dataset import buttons
-            if(GUILayout.Button("Import RAW dataset"))
-            {
-                RuntimeFileBrowser.ShowOpenFileDialog(OnOpenRAWDatasetResult, "DataFiles");
-            }
-
-            if(GUILayout.Button("Import PARCHG dataset"))
-            {
-                RuntimeFileBrowser.ShowOpenFileDialog(OnOpenPARDatasetResult, "DataFiles");
-            }
-
             if (GUILayout.Button("Import DICOM dataset"))
             {
                 RuntimeFileBrowser.ShowOpenDirectoryDialog(OnOpenDICOMDatasetResult);
@@ -49,49 +39,6 @@ namespace UnityVolumeRendering
             GUILayout.EndVertical();
         }
 
-        private void OnOpenPARDatasetResult(RuntimeFileBrowser.DialogResult result)
-        {
-            if (!result.cancelled)
-            {
-                DespawnAllDatasets();
-                string filePath = result.path;
-                IImageFileImporter parimporter = ImporterFactory.CreateImageFileImporter(ImageFileFormat.VASP);
-                VolumeDataset dataset = parimporter.Import(filePath);
-                if (dataset != null)
-                {
-                        VolumeObjectFactory.CreateObject(dataset);
-                }
-            }
-        }
-        
-        private void OnOpenRAWDatasetResult(RuntimeFileBrowser.DialogResult result)
-        {
-            if(!result.cancelled)
-            {
-
-                // We'll only allow one dataset at a time in the runtime GUI (for simplicity)
-                DespawnAllDatasets();
-
-                // Did the user try to import an .ini-file? Open the corresponding .raw file instead
-                string filePath = result.path;
-                if (System.IO.Path.GetExtension(filePath) == ".ini")
-                    filePath = filePath.Replace(".ini", ".raw");
-
-                // Parse .ini file
-                DatasetIniData initData = DatasetIniReader.ParseIniFile(filePath + ".ini");
-                if(initData != null)
-                {
-                    // Import the dataset
-                    RawDatasetImporter importer = new RawDatasetImporter(filePath, initData.dimX, initData.dimY, initData.dimZ, initData.format, initData.endianness, initData.bytesToSkip);
-                    VolumeDataset dataset = importer.Import();
-                    // Spawn the object
-                    if (dataset != null)
-                    {
-                        VolumeObjectFactory.CreateObject(dataset);
-                    }
-                }
-            }
-        }
 
         private void OnOpenDICOMDatasetResult(RuntimeFileBrowser.DialogResult result)
         {

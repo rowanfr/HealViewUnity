@@ -14,7 +14,7 @@ public class MarchingCube : MonoBehaviour
     ComputeBuffer pointsBuffer;
     ComputeBuffer triCountBuffer;
 
-    
+
 
     public void ShaderMeshBuild(double[,,] DICOMArray, double isolevel)
     {
@@ -40,11 +40,11 @@ public class MarchingCube : MonoBehaviour
         public double[] val;//8 val for
     }
 
-    
-    
+
+
 
     //Isolevel is cutoff point for 
-    
+
 
     MarchingCubeTables DataTable = new MarchingCubeTables();
 
@@ -66,7 +66,7 @@ public class MarchingCube : MonoBehaviour
             }
         }
 
-        grid.val = new double[8] { 
+        grid.val = new double[8] {
             examinedMatrix[x, y, z], //0 point
             examinedMatrix[(x + 1), y, z], //1 x point
             examinedMatrix[(x + 1), (y + 1), z], //1 y and 1 x point
@@ -93,7 +93,7 @@ public class MarchingCube : MonoBehaviour
         grid.vertices[5].position = new Vector3((x + 1), y, (z + 1));
         grid.vertices[6].position = new Vector3((x + 1), (y + 1), (z + 1));
         grid.vertices[7].position = new Vector3(x, y + 1, (z + 1));
-        
+
 
         Debug.Log("Gridvert creation");
         for (uint n = 0; n < grid.val.Length; n++)
@@ -107,7 +107,7 @@ public class MarchingCube : MonoBehaviour
 
     public Mesh meshBuild(double[,,] testArray, double isolevel)
     {
-        
+
 
         //Human [x,y,z]
         //The 100 and 1 should be at different heights if interpolation is working as expected
@@ -147,7 +147,7 @@ public class MarchingCube : MonoBehaviour
                     if (grid.val[7] < isolevel) cubeindex |= 128;
 
                     /* Cube is entirely in/out of the surface */
-                    if (DataTable.edgeTable[cubeindex] == 0);
+                    if (DataTable.edgeTable[cubeindex] == 0) ;
 
                     Debug.Log("GridVal");
                     for (uint n = 0; n < grid.val.Length; n++)
@@ -157,7 +157,7 @@ public class MarchingCube : MonoBehaviour
                     }
 
                     /* Find the vertices where the surface intersects the cube */
-                    
+
                     XYZ[] vertlist = new XYZ[12];
                     //One inputs the grid components into a vertexInterp function to get an actual vertex point to make the triangles later on
                     //Consider vertexList as being the edges of the current scanning grid and the output of VertexInterp being the position on that edge
@@ -227,12 +227,12 @@ public class MarchingCube : MonoBehaviour
                         Debug.Log(i);
                         Debug.Log("tritable value");
                         Debug.Log(DataTable.triTable[cubeindex, i]);
-                        Debug.Log(DataTable.triTable[cubeindex, (i+1)]);
-                        Debug.Log(DataTable.triTable[cubeindex, (i+2)]);
+                        Debug.Log(DataTable.triTable[cubeindex, (i + 1)]);
+                        Debug.Log(DataTable.triTable[cubeindex, (i + 2)]);
                         //Must place this inside for loop to add reference to triangles within it. Without this or if this was outside of the for loop the object values would be 0,0,0
                         TRIANGLE triangleLoop = new TRIANGLE();
                         triangleLoop.vertices = new XYZ[3];
-                        
+
                         triangleLoop.vertices[0].position = vertlist[DataTable.triTable[cubeindex, i]].position;
                         triangleLoop.vertices[1].position = vertlist[DataTable.triTable[cubeindex, i + 1]].position;
                         triangleLoop.vertices[2].position = vertlist[DataTable.triTable[cubeindex, i + 2]].position;
@@ -267,7 +267,7 @@ public class MarchingCube : MonoBehaviour
                     }
 
                     Debug.Log("Triangles Loaded");
-                    for (int n = 0; n < (ntriang * 3); n+= 3)
+                    for (int n = 0; n < (ntriang * 3); n += 3)
                     {
                         Debug.Log("Triangle Group Loaded: " + n.ToString());
                         Debug.Log(triangleVertList[n]);
@@ -276,10 +276,10 @@ public class MarchingCube : MonoBehaviour
                     }
 
 
-                    
+
 
                     Debug.Log("Mesh Input");
-                    for (int n = 0; n < mesh.vertices.Length; n+= 3)
+                    for (int n = 0; n < mesh.vertices.Length; n += 3)
                     {
                         Debug.Log("Mesh Input Triangles: " + n.ToString());
                         Debug.Log(mesh.vertices[n]);
@@ -294,7 +294,7 @@ public class MarchingCube : MonoBehaviour
                     //n is the number of point indeces, because of this ntriang must be multipplied by 3 as it represents a triangle and not a single index point
                     //
                     int currentNumTriangles = trianglesSequence.Count;
-                    for (int n = currentNumTriangles; n < ((ntriang*3) + currentNumTriangles); n += 3)
+                    for (int n = currentNumTriangles; n < ((ntriang * 3) + currentNumTriangles); n += 3)
                     {
                         trianglesSequence.Add(n);
                         trianglesSequence.Add(n + 1);
@@ -302,7 +302,7 @@ public class MarchingCube : MonoBehaviour
                     }
 
                     Debug.Log("Triangles Loaded");
-                    for (int n = 0; n < trianglesSequence.Count; n+= 3)
+                    for (int n = 0; n < trianglesSequence.Count; n += 3)
                     {
                         Debug.Log("Triangle Group Order" + n.ToString());
                         Debug.Log(trianglesSequence[n]);
@@ -412,17 +412,17 @@ public class MarchingCube : MonoBehaviour
         {
             Debug.Log(mesh.triangles[n]);
         }
-        
+
     }
 
 
     public void OnSliderUpdated(SliderEventData eventData)
     {
-        
+
         var num = eventData.NewValue;
         Debug.Log(num);
         int conversion = (int)(255f * num);
-        double[,,] initialArray = { { { Convert.ToSingle((conversion & 1)!=0), Convert.ToSingle((conversion & 2) != 0) }, { Convert.ToSingle((conversion & 4) != 0), Convert.ToSingle((conversion & 8) != 0) } }, { { Convert.ToSingle((conversion & 16) != 0), Convert.ToSingle((conversion & 32) != 0) }, { Convert.ToSingle((conversion & 64) != 0), Convert.ToSingle((conversion & 128) != 0) } } };
+        double[,,] initialArray = { { { Convert.ToSingle((conversion & 1) != 0), Convert.ToSingle((conversion & 2) != 0) }, { Convert.ToSingle((conversion & 4) != 0), Convert.ToSingle((conversion & 8) != 0) } }, { { Convert.ToSingle((conversion & 16) != 0), Convert.ToSingle((conversion & 32) != 0) }, { Convert.ToSingle((conversion & 64) != 0), Convert.ToSingle((conversion & 128) != 0) } } };
         mesh.Clear();
         mesh = meshBuild(initialArray, 0.5f);
         GetComponent<MeshFilter>().mesh = mesh;
@@ -439,6 +439,6 @@ public class MarchingCube : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+
     }
 }

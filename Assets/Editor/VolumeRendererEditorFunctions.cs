@@ -4,29 +4,12 @@ using System.IO;
 using System.Collections.Generic;
 using System;
 using System.Linq;
+using UnityVolumeRendering;
 
 namespace UnityVolumeRendering
 {
     public class VolumeRendererEditorFunctions
     {
-        [MenuItem("Volume Rendering/Load dataset/Load raw dataset")]
-        static void ShowDatasetImporter()
-        {
-            string file = EditorUtility.OpenFilePanel("Select a dataset to load", "DataFiles", "");
-            if (File.Exists(file))
-            {
-                RAWDatasetImporterEditorWindow wnd = (RAWDatasetImporterEditorWindow)EditorWindow.GetWindow(typeof(RAWDatasetImporterEditorWindow));
-                if (wnd != null)
-                    wnd.Close();
-
-                wnd = new RAWDatasetImporterEditorWindow(file);
-                wnd.Show();
-            }
-            else
-            {
-                Debug.LogError("File doesn't exist: " + file);
-            }
-        }
 
         [MenuItem("Volume Rendering/Load dataset/Load DICOM")]
         static void ShowDICOMImporter()
@@ -53,13 +36,14 @@ namespace UnityVolumeRendering
 
                 if (fileCandidates.Any())
                 {
-                    IImageSequenceImporter importer = ImporterFactory.CreateImageSequenceImporter(ImageSequenceFormat.DICOM);
+                    DICOMImporter importer = new DICOMImporter();
                     IEnumerable<IImageSequenceSeries> seriesList = importer.LoadSeries(fileCandidates);
                     float numVolumesCreated = 0;
 
                     foreach (IImageSequenceSeries series in seriesList)
                     {
-                        VolumeDataset dataset = importer.ImportSeries(series);
+                        VolumeDataset blankDataset = new VolumeDataset();
+                        VolumeDataset dataset = importer.ImportSeries(series, blankDataset);
                         if (dataset != null)
                         {
                             if (EditorPrefs.GetBool("DownscaleDatasetPrompt"))
@@ -81,137 +65,6 @@ namespace UnityVolumeRendering
                     Debug.LogError("Could not find any DICOM files to import.");
 
                 
-            }
-            else
-            {
-                Debug.LogError("Directory doesn't exist: " + dir);
-            }
-        }
-
-#if UNITY_EDITOR_WIN
-        [MenuItem("Volume Rendering/Load dataset/Load NRRD dataset")]
-        static void ShowNRRDDatasetImporter()
-        {
-            if (!SimpleITKManager.IsSITKEnabled())
-            {
-                if (EditorUtility.DisplayDialog("Missing SimpleITK", "You need to download SimpleITK to load NRRD datasets from the import settings menu.\n" +
-                    "Do you want to open the import settings menu?", "Yes", "No"))
-                {
-                    ImportSettingsEditorWindow.ShowWindow();
-                }
-                return;
-            }
-
-            string file = EditorUtility.OpenFilePanel("Select a dataset to load (.nrrd)", "DataFiles", "");
-            if (File.Exists(file))
-            {
-                IImageFileImporter importer = ImporterFactory.CreateImageFileImporter(ImageFileFormat.NRRD);
-                VolumeDataset dataset = importer.Import(file);
-
-                if (dataset != null)
-                {
-                    VolumeRenderedObject obj = VolumeObjectFactory.CreateObject(dataset);
-                }
-                else
-                {
-                    Debug.LogError("Failed to import datset");
-                }
-            }
-            else
-            {
-                Debug.LogError("File doesn't exist: " + file);
-            }
-        }
-#endif
-
-#if UNITY_EDITOR_WIN
-        [MenuItem("Volume Rendering/Load dataset/Load NIFTI dataset")]
-        static void ShowNIFTIDatasetImporter()
-        {
-            if (!SimpleITKManager.IsSITKEnabled())
-            {
-                if (EditorUtility.DisplayDialog("Missing SimpleITK", "You need to download SimpleITK to load NRRD datasets from the import settings menu.\n" +
-                    "Do you want to open the import settings menu?", "Yes", "No"))
-                {
-                    ImportSettingsEditorWindow.ShowWindow();
-                }
-                return;
-            }
-
-            string file = EditorUtility.OpenFilePanel("Select a dataset to load (.nii)", "DataFiles", "");
-            if (File.Exists(file))
-            {
-                IImageFileImporter importer = ImporterFactory.CreateImageFileImporter(ImageFileFormat.NIFTI);
-                VolumeDataset dataset = importer.Import(file);
-
-                if (dataset != null)
-                {
-                    VolumeRenderedObject obj = VolumeObjectFactory.CreateObject(dataset);
-                }
-                else
-                {
-                    Debug.LogError("Failed to import datset");
-                }
-            }
-            else
-            {
-                Debug.LogError("File doesn't exist: " + file);
-            }
-        }
-#endif
-
-        [MenuItem("Volume Rendering/Load dataset/Load PARCHG dataset")]
-        static void ShowParDatasetImporter()
-        {
-            string file = EditorUtility.OpenFilePanel("Select a dataset to load", "DataFiles", "");
-            if (File.Exists(file))
-            {
-                IImageFileImporter importer = ImporterFactory.CreateImageFileImporter(ImageFileFormat.VASP);
-                VolumeDataset dataset = importer.Import(file);
-
-                if (dataset != null)
-                {
-                    VolumeRenderedObject obj = VolumeObjectFactory.CreateObject(dataset);
-                }
-                else
-                {
-                    Debug.LogError("Failed to import datset");
-                }
-            }
-            else
-            {
-                Debug.LogError("File doesn't exist: " + file);
-            }
-        }
-
-        [MenuItem("Volume Rendering/Load dataset/Load image sequence")]
-        static void ShowSequenceImporter()
-        {
-            string dir = EditorUtility.OpenFolderPanel("Select a folder to load", "", "");
-            
-            if (Directory.Exists(dir))
-            {
-                List<string> filePaths = Directory.GetFiles(dir).ToList();
-                IImageSequenceImporter importer = ImporterFactory.CreateImageSequenceImporter(ImageSequenceFormat.ImageSequence);
-
-                IEnumerable<IImageSequenceSeries> seriesList = importer.LoadSeries(filePaths);
-
-                foreach(IImageSequenceSeries series in seriesList)
-                {
-                    VolumeDataset dataset = importer.ImportSeries(series);
-                    if (dataset != null)
-                    {
-                        if (EditorPrefs.GetBool("DownscaleDatasetPrompt"))
-                        {
-                            if (EditorUtility.DisplayDialog("Optional DownScaling",
-                                $"Do you want to downscale the dataset? The dataset's dimension is: {dataset.dimX} x {dataset.dimY} x {dataset.dimZ}", "Yes", "No"))
-                            {
-                                dataset.DownScaleData();
-                            }
-                        }
-                        VolumeObjectFactory.CreateObject(dataset);
-                    }
-                }
             }
             else
             {

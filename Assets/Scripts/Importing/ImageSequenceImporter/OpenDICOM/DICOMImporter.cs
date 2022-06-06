@@ -1,14 +1,14 @@
 ﻿using System;
 using System.IO;
 using UnityEngine;
-using openDicom.Registry;
-using openDicom.File;
-using openDicom.DataStructure.DataSet;
-using openDicom.DataStructure;
 using System.Collections.Generic;
-using openDicom.Image;
 using System.Linq;
 using System.Runtime.InteropServices;
+using FellowOakDicom;
+using FellowOakDicom.Imaging;
+using FellowOakDicom.Imaging.Render;
+using Microsoft.MixedReality.Toolkit.UI;
+
 
 namespace UnityVolumeRendering
 {
@@ -16,17 +16,19 @@ namespace UnityVolumeRendering
     /// DICOM importer.
     /// Reads a 3D DICOM dataset from a list of DICOM files.
     /// </summary>
-    public class DICOMImporter : IImageSequenceImporter
+    public class DICOMImporter
     {
+        ProgressIndicatorLoadingBar indicator;
         public class DICOMSliceFile : IImageSequenceFile
         {
-            public AcrNemaFile file;
+            public DicomFile file;
             public string filePath;
             public float location = 0;
             public Vector3 position = Vector3.zero;
             public float intercept = 0.0f;
             public float slope = 1.0f;
-            public float pixelSpacing = 0.0f;
+            public float pixelSpacingX = 0.0f;
+            public float pixelSpacingY = 0.0f;
             public string seriesUID = "";
             public bool missingLocation = false;
 
@@ -48,49 +50,35 @@ namespace UnityVolumeRendering
 
         private int iFallbackLoc = 0;
 
+
+        public void setIndicator(ProgressIndicatorLoadingBar setIndicator)
+        {
+            indicator = setIndicator;
+        }
+
         public IEnumerable<IImageSequenceSeries> LoadSeries(IEnumerable<string> fileCandidates)
         {
-            DataElementDictionary dataElementDictionary = new DataElementDictionary();//Data element dictionary uses LoadFrom function
-            UidDictionary uidDictionary = new UidDictionary();
-            try
-            {
-                // Load .dic files from Resources
-                TextAsset dcmElemAsset = (TextAsset)Resources.Load("dicom-elements-2007.dic");
-                Debug.Assert(dcmElemAsset != null, "dicom-elements-2007.dic is missing from the Resources folder");
-                TextAsset dcmUidsAsset = (TextAsset)Resources.Load("dicom-uids-2007.dic");
-                Debug.Assert(dcmUidsAsset != null, "dicom-uids-2007.dic is missing from the Resources folder");
 
-                dataElementDictionary.LoadFromMemory(new MemoryStream(dcmElemAsset.bytes), DictionaryFileFormat.BinaryFile);
-                uidDictionary.LoadFromMemory(new MemoryStream(dcmUidsAsset.bytes), DictionaryFileFormat.BinaryFile);
-            }
-            catch (Exception dictionaryException)
-            {
-                Debug.LogError("Problems processing dictionaries:\n" + dictionaryException);
-                return null;
-            }
 
             // Load all DICOM files
             List<DICOMSliceFile> files = new List<DICOMSliceFile>();
-            
+
             IEnumerable<string> sortedFiles = fileCandidates.OrderBy(s => s);
-            
+
             foreach (string filePath in sortedFiles)
             {
                 DICOMSliceFile sliceFile = ReadDICOMFile(filePath);
-                if(sliceFile != null)
+                if (sliceFile != null)
                 {
-                    if (sliceFile.file.PixelData.IsJpeg)
-                        Debug.LogError("DICOM with JPEG not supported by importer. Please enable SimpleITK from volume rendering import settings.");
-                    else
-                        files.Add(sliceFile);
+                    files.Add(sliceFile);
                 }
             }
 
             // Split parsed DICOM files into series (by DICOM series UID)
             Dictionary<string, DICOMSeries> seriesByUID = new Dictionary<string, DICOMSeries>();
-            foreach(DICOMSliceFile file in files)
+            foreach (DICOMSliceFile file in files)
             {
-                if(!seriesByUID.ContainsKey(file.seriesUID))
+                if (!seriesByUID.ContainsKey(file.seriesUID))
                 {
                     seriesByUID.Add(file.seriesUID, new DICOMSeries());
                 }
@@ -102,7 +90,7 @@ namespace UnityVolumeRendering
             return new List<DICOMSeries>(seriesByUID.Values);
         }
 
-        public VolumeDataset ImportSeries(IImageSequenceSeries series)
+        public VolumeDataset ImportSeries(IImageSequenceSeries series, VolumeDataset dataset)
         {
             DICOMSeries dicomSeries = (DICOMSeries)series;
             List<DICOMSliceFile> files = dicomSeries.dicomFiles;
@@ -117,7 +105,7 @@ namespace UnityVolumeRendering
             // Calculate slice location from "Image Position" (0020,0032)
             if (needsCalcLoc)
                 CalcSliceLocFromPos(files);
-            
+
             // Sort files by slice location
             files.Sort((DICOMSliceFile a, DICOMSliceFile b) => { return a.location.CompareTo(b.location); });
 
@@ -129,11 +117,11 @@ namespace UnityVolumeRendering
                 return null;
             }
 
-            // Create dataset
-            VolumeDataset dataset = new VolumeDataset();
+            // Use passed dataset which allows for async as we're not constructing it off the main thread
             dataset.datasetName = Path.GetFileName(files[0].filePath);
-            dataset.dimX = files[0].file.PixelData.Columns;
-            dataset.dimY = files[0].file.PixelData.Rows;
+            DicomPixelData datasetPixelData = DicomPixelData.Create(files[0].file.Dataset);
+            dataset.dimX = datasetPixelData.Width;
+            dataset.dimY = datasetPixelData.Height;
             dataset.dimZ = files.Count;
 
             int dimension = dataset.dimX * dataset.dimY * dataset.dimZ;
@@ -141,32 +129,33 @@ namespace UnityVolumeRendering
 
             for (int iSlice = 0; iSlice < files.Count; iSlice++)
             {
+                indicator.Progress = (float)iSlice / (float)files.Count;
+                Debug.Log("Slice" + iSlice.ToString());
                 DICOMSliceFile slice = files[iSlice];
-                PixelData pixelData = slice.file.PixelData;
-                int[] pixelArr = ToPixelArray(pixelData);
-                if (pixelArr == null) // This should not happen
-                    pixelArr = new int[pixelData.Rows * pixelData.Columns];
+                DicomPixelData pixelImage = DicomPixelData.Create(slice.file.Dataset);
+                IPixelData pixelData = PixelDataFactory.Create(pixelImage, 0);
 
-                for (int iRow = 0; iRow < pixelData.Rows; iRow++)
+                //int[] pixelArr = ToPixelArray(pixelData);
+
+                for (int iRow = 0; iRow < pixelData.Height; iRow++)
                 {
-                    for (int iCol = 0; iCol < pixelData.Columns; iCol++)
+                    for (int iCol = 0; iCol < pixelData.Width; iCol++)
                     {
-                        int pixelIndex = (iRow * pixelData.Columns) + iCol;
-                        int dataIndex = (iSlice * pixelData.Columns * pixelData.Rows) + (iRow * pixelData.Columns) + iCol;
+                        //int pixelIndex = (iRow * pixelData.Width) + iCol;
+                        int dataIndex = (iSlice * pixelData.Width * pixelData.Height) + (iRow * pixelData.Width) + iCol;
 
-                        int pixelValue = pixelArr[pixelIndex];
-                        float hounsfieldValue = pixelValue * slice.slope + slice.intercept;
+                        float hounsfieldValue = (float)pixelData.GetPixel(iCol, iRow) * slice.slope + slice.intercept;
 
                         dataset.data[dataIndex] = Mathf.Clamp(hounsfieldValue, -1024.0f, 3071.0f);
                     }
                 }
             }
 
-            if (files[0].pixelSpacing > 0.0f)
+            if (files[0].pixelSpacingX > 0.0f || files[0].pixelSpacingY > 0.0f)
             {
-                dataset.scaleX = files[0].pixelSpacing * dataset.dimX / 1000;// / 1000 as original scale is in mm while Unity scale is in m
-                dataset.scaleY = files[0].pixelSpacing * dataset.dimY / 1000;// / 1000 as original scale is in mm while Unity scale is in m
-                dataset.scaleZ = Mathf.Abs(files[files.Count - 1].location - files[0].location)/ 1000;//Added / 1000 as original scale is in mm while Unity scale is in m
+                dataset.scaleX = files[0].pixelSpacingX * dataset.dimX / 1000;// / 1000 as original scale is in mm while Unity scale is in m
+                dataset.scaleY = files[0].pixelSpacingY * dataset.dimY / 1000;// / 1000 as original scale is in mm while Unity scale is in m
+                dataset.scaleZ = Mathf.Abs(files[files.Count - 1].location - files[0].location) / 1000;//Added / 1000 as original scale is in mm while Unity scale is in m
             }
 
             dataset.FixDimensions();
@@ -176,35 +165,28 @@ namespace UnityVolumeRendering
 
         private DICOMSliceFile ReadDICOMFile(string filePath)
         {
-            AcrNemaFile file = LoadFile(filePath);
+            DicomFile file = LoadFile(filePath);
 
-            if (file != null && file.HasPixelData)
+            if (file != null && file.Dataset.Contains(DicomTag.PixelData))
             {
                 DICOMSliceFile slice = new DICOMSliceFile();
                 slice.file = file;
                 slice.filePath = filePath;
 
-                Tag locTag = new Tag("(0020,1041)");
-                Tag posTag = new Tag("(0020,0032)");
-                Tag interceptTag = new Tag("(0028,1052)");
-                Tag slopeTag = new Tag("(0028,1053)");
-                Tag pixelSpacingTag = new Tag("(0028,0030)");
-                Tag seriesUIDTag = new Tag("(0020,000E)");
 
                 // Read location (optional)
-                if (file.DataSet.Contains(locTag))
+                if (file.Dataset.Contains(DicomTag.SliceLocation))
                 {
-                    DataElement elemLoc = file.DataSet[locTag];
-                    slice.location = (float)Convert.ToDouble(elemLoc.Value[0]);
+                    slice.location = file.Dataset.GetValues<float>(DicomTag.SliceLocation)[0];
                 }
                 // If no location tag, read position tag (will need to calculate location afterwards)
-                else if (file.DataSet.Contains(posTag))
+                else if (file.Dataset.Contains(DicomTag.ImagePositionPatient))
                 {
-                    DataElement elemLoc = file.DataSet[posTag];
+                    float[] elemLoc = file.Dataset.GetValues<float>(DicomTag.ImagePositionPatient);
                     Vector3 pos = Vector3.zero;
-                    pos.x = (float)Convert.ToDouble(elemLoc.Value[0]);
-                    pos.y = (float)Convert.ToDouble(elemLoc.Value[1]);
-                    pos.z = (float)Convert.ToDouble(elemLoc.Value[2]);
+                    pos.x = elemLoc[0];
+                    pos.y = elemLoc[1];
+                    pos.z = elemLoc[2];
                     slice.position = pos;
                     slice.missingLocation = true;
                 }
@@ -214,37 +196,34 @@ namespace UnityVolumeRendering
                     // Fallback: use counter as location
                     slice.location = (float)iFallbackLoc++;
                 }
-                
+
                 // Read intercept
-                if (file.DataSet.Contains(interceptTag))
+                if (file.Dataset.Contains(DicomTag.RescaleIntercept))
                 {
-                    DataElement elemIntercept = file.DataSet[interceptTag];
-                    slice.intercept = (float)Convert.ToDouble(elemIntercept.Value[0]);
+                    slice.intercept = file.Dataset.GetValues<float>(DicomTag.RescaleIntercept)[0];
                 }
                 else
                     Debug.LogWarning($"The file {filePath} is missing the intercept element. As a result, the default transfer function might not look good.");
-                
+
                 // Read slope
-                if (file.DataSet.Contains(slopeTag))
+                if (file.Dataset.Contains(DicomTag.RescaleSlope))
                 {
-                    DataElement elemSlope = file.DataSet[slopeTag];
-                    slice.slope = (float)Convert.ToDouble(elemSlope.Value[0]);
+                    slice.slope = file.Dataset.GetValues<float>(DicomTag.RescaleSlope)[0];
                 }
                 else
                     Debug.LogWarning($"The file {filePath} is missing the intercept element. As a result, the default transfer function might not look good.");
-                
+
                 // Read pixel spacing
-                if (file.DataSet.Contains(pixelSpacingTag))
+                if (file.Dataset.Contains(DicomTag.PixelSpacing))
                 {
-                    DataElement elemPixelSpacing = file.DataSet[pixelSpacingTag];
-                    slice.pixelSpacing = (float)Convert.ToDouble(elemPixelSpacing.Value[0]);
+                    slice.pixelSpacingX = file.Dataset.GetValues<float>(DicomTag.PixelSpacing)[0];//Only x value
+                    slice.pixelSpacingY = file.Dataset.GetValues<float>(DicomTag.PixelSpacing)[1];//Only y value
                 }
 
                 // Read series UID
-                if (file.DataSet.Contains(seriesUIDTag))
+                if (file.Dataset.Contains(DicomTag.SeriesInstanceUID))
                 {
-                    DataElement elemSeriesUID = file.DataSet[seriesUIDTag];
-                    slice.seriesUID = Convert.ToString(elemSeriesUID.Value[0]);
+                    slice.seriesUID = file.Dataset.GetValues<string>(DicomTag.SeriesInstanceUID)[0];
                 }
 
                 return slice;
@@ -252,17 +231,15 @@ namespace UnityVolumeRendering
             return null;
         }
 
-        private AcrNemaFile LoadFile(string filePath)
+        private DicomFile LoadFile(string filePath)
         {
-            AcrNemaFile file = null;
+            DicomFile file = null;
             try
             {
-                if (DicomFile.IsDicomFile(filePath))
-                    file = new DicomFile(filePath, false);
-                else if (AcrNemaFile.IsAcrNemaFile(filePath))
-                    file = new AcrNemaFile(filePath, false);
+                if (DicomFile.HasValidHeader(filePath))//This checks if this is a DICOM file
+                    file = DicomFile.Open(filePath, FileReadOption.ReadAll);//This makes DicomFile Object
                 else
-                    Debug.LogError("Selected file is neither a DICOM nor an ACR-NEMA file.");
+                    Debug.LogError("Selected file is not a DICOM file.");
             }
             catch (Exception dicomFileException)
             {
@@ -272,37 +249,26 @@ namespace UnityVolumeRendering
             return file;
         }
 
-        private static int[] ToPixelArray(PixelData pixelData)
+        private static int[] ToPixelArray(DicomPixelData pixelData)
         {
             int[] intArray;
-            if (pixelData.Data.Value.IsSequence)
-            {
-                Sequence sq = (Sequence)pixelData.Data.Value[0];
-                intArray = new int[sq.Count];
-                for (int i = 0; i < sq.Count; i++)
-                    intArray[i] = Convert.ToInt32(sq[i].Value[0]);
-                return intArray;
-            }
-            else if (pixelData.Data.Value.IsArray)
-            {
-                byte[][] bytesArray = pixelData.ToBytesArray();
+
+                byte[] bytesArray = pixelData.GetFrame(0).Data;
                 if (bytesArray != null && bytesArray.Length > 0)
                 {
-                    byte[] bytes = bytesArray[0];
-
                     int cellSize = pixelData.BitsAllocated / 8;
-                    int pixelCount = bytes.Length / cellSize;
+                    int pixelCount = bytesArray.Length / cellSize;
 
                     intArray = new int[pixelCount];
                     int pixelIndex = 0;
 
                     // Byte array for a single cell/pixel value
                     byte[] cellData = new byte[cellSize];
-                    for(int iByte = 0; iByte < bytes.Length; iByte++)
+                    for (int iByte = 0; iByte < bytesArray.Length; iByte++)
                     {
                         // Collect bytes for one cell (sample)
                         int index = iByte % cellSize;
-                        cellData[index] = bytes[iByte];
+                        cellData[index] = bytesArray[iByte];
                         // We have collected enough bytes for one cell => convert and add it to pixel array
                         if (index == cellSize - 1)
                         {
@@ -321,9 +287,6 @@ namespace UnityVolumeRendering
                         }
                     }
                     return intArray;
-                }
-                else
-                    return null;
             }
             else
             {
@@ -339,7 +302,7 @@ namespace UnityVolumeRendering
             Vector3 a = slices[0].position;
             slices[0].location = 0.0f;
 
-            for(int i = 1; i < slices.Count; i++)
+            for (int i = 1; i < slices.Count; i++)
             {
                 // Calculate the vector between a and p (ap) and dot it with v to get the distance along the v vector (distance when projected onto v)
                 Vector3 p = slices[i].position;

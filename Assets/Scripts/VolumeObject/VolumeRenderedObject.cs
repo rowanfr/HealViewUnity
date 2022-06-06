@@ -1,4 +1,7 @@
 ﻿using UnityEngine;
+using Microsoft.MixedReality.Toolkit.UI;//Provides constrain Manager
+using Microsoft.MixedReality.Toolkit.UI.BoundsControl;//Provides BoundsControl
+using Microsoft.MixedReality.Toolkit.Input;//NearInteractionGrabbable
 
 namespace UnityVolumeRendering
 {
@@ -45,6 +48,14 @@ namespace UnityVolumeRendering
             sliceMat.SetTexture("_TFTex", transferFunction.GetTexture());
             sliceMat.SetMatrix("_parentInverseMat", transform.worldToLocalMatrix);
             sliceMat.SetMatrix("_planeMat", Matrix4x4.TRS(sliceRenderingPlane.transform.position, sliceRenderingPlane.transform.rotation, transform.lossyScale)); // TODO: allow changing scale
+
+            sliceRenderingPlane.AddComponent<BoxCollider>();
+
+
+            NearInteractionGrabbable grabSettings = sliceRenderingPlane.AddComponent<NearInteractionGrabbable>();
+            //grabSettings.ShowTetherWhenManipulating = true;
+
+            sliceRenderingPlane.AddComponent<ObjectManipulator>();
 
             return sliceRenderingPlane.GetComponent<SlicingPlane>();
         }

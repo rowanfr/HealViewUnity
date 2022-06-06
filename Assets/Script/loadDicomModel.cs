@@ -122,12 +122,12 @@ public class loadDicomModel : MonoBehaviour
             var dicomImage = new FellowOakDicom.Imaging.DicomImage(dataset);
             //dataimage, int32 frame
             var pixelData = FellowOakDicom.Imaging.Render.PixelDataFactory.Create(dataimage, 0);
+            
             int xNumValues = pixelData.Width;
             int yNumValues = pixelData.Height;
             int zNumValues = fileList.Count;
 
             Debug.Log(dataset.GetValues<string>(DicomTag.PixelSpacing)[0]);
-            //Why must I find DicomDatasetWalker is a random forum post. Please update API
 
             double[,,] Dicom3DArray = new double[xNumValues, yNumValues, zNumValues];
             for (int z = 0; z < zNumValues; z++)
