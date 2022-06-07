@@ -34,7 +34,6 @@ namespace UnityVolumeRendering
         private Texture3D gradientTexture = null;
 
         ProgressIndicatorLoadingBar indicator;
-        GameObject LoadingIndicator;
 
 
         public void setIndicator(ProgressIndicatorLoadingBar setIndicator)

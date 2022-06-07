@@ -126,30 +126,58 @@ namespace UnityVolumeRendering
 
             int dimension = dataset.dimX * dataset.dimY * dataset.dimZ;
             dataset.data = new float[dimension];
-
-            for (int iSlice = 0; iSlice < files.Count; iSlice++)
+            if (indicator != null)
             {
-                indicator.Progress = (float)iSlice / (float)files.Count;
-                Debug.Log("Slice" + iSlice.ToString());
-                DICOMSliceFile slice = files[iSlice];
-                DicomPixelData pixelImage = DicomPixelData.Create(slice.file.Dataset);
-                IPixelData pixelData = PixelDataFactory.Create(pixelImage, 0);
-
-                //int[] pixelArr = ToPixelArray(pixelData);
-
-                for (int iRow = 0; iRow < pixelData.Height; iRow++)
+                for (int iSlice = 0; iSlice < files.Count; iSlice++)
                 {
-                    for (int iCol = 0; iCol < pixelData.Width; iCol++)
+                    indicator.Progress = (float)iSlice / (float)files.Count;
+                    Debug.Log("Slice" + iSlice.ToString());
+                    DICOMSliceFile slice = files[iSlice];
+                    DicomPixelData pixelImage = DicomPixelData.Create(slice.file.Dataset);
+                    IPixelData pixelData = PixelDataFactory.Create(pixelImage, 0);
+
+                    //int[] pixelArr = ToPixelArray(pixelData);
+
+                    for (int iRow = 0; iRow < pixelData.Height; iRow++)
                     {
-                        //int pixelIndex = (iRow * pixelData.Width) + iCol;
-                        int dataIndex = (iSlice * pixelData.Width * pixelData.Height) + (iRow * pixelData.Width) + iCol;
+                        for (int iCol = 0; iCol < pixelData.Width; iCol++)
+                        {
+                            //int pixelIndex = (iRow * pixelData.Width) + iCol;
+                            int dataIndex = (iSlice * pixelData.Width * pixelData.Height) + (iRow * pixelData.Width) + iCol;
 
-                        float hounsfieldValue = (float)pixelData.GetPixel(iCol, iRow) * slice.slope + slice.intercept;
+                            float hounsfieldValue = (float)pixelData.GetPixel(iCol, iRow) * slice.slope + slice.intercept;
 
-                        dataset.data[dataIndex] = Mathf.Clamp(hounsfieldValue, -1024.0f, 3071.0f);
+                            dataset.data[dataIndex] = Mathf.Clamp(hounsfieldValue, -1024.0f, 3071.0f);
+                        }
                     }
                 }
             }
+            else
+            {
+                for (int iSlice = 0; iSlice < files.Count; iSlice++)
+                {
+                    Debug.Log("Slice" + iSlice.ToString());
+                    DICOMSliceFile slice = files[iSlice];
+                    DicomPixelData pixelImage = DicomPixelData.Create(slice.file.Dataset);
+                    IPixelData pixelData = PixelDataFactory.Create(pixelImage, 0);
+
+                    //int[] pixelArr = ToPixelArray(pixelData);
+
+                    for (int iRow = 0; iRow < pixelData.Height; iRow++)
+                    {
+                        for (int iCol = 0; iCol < pixelData.Width; iCol++)
+                        {
+                            //int pixelIndex = (iRow * pixelData.Width) + iCol;
+                            int dataIndex = (iSlice * pixelData.Width * pixelData.Height) + (iRow * pixelData.Width) + iCol;
+
+                            float hounsfieldValue = (float)pixelData.GetPixel(iCol, iRow) * slice.slope + slice.intercept;
+
+                            dataset.data[dataIndex] = Mathf.Clamp(hounsfieldValue, -1024.0f, 3071.0f);
+                        }
+                    }
+                }
+            }
+            
 
             if (files[0].pixelSpacingX > 0.0f || files[0].pixelSpacingY > 0.0f)
             {

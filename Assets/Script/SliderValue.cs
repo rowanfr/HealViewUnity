@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Microsoft.MixedReality.Toolkit.UI;
 using TMPro;
+using UnityVolumeRendering;
 
 public class SliderValue : MonoBehaviour
 {
@@ -11,6 +12,8 @@ public class SliderValue : MonoBehaviour
 
     [SerializeField]
     private TextMeshPro textMesh = null;
+
+    private VolumeRenderedObject currentGameobj;
 
     public void setMaxMin(double maxInput, double minInput)
     {
@@ -26,17 +29,27 @@ public class SliderValue : MonoBehaviour
         return maxmin;
     }
 
+    public void onObjectGiven(VolumeRenderedObject givenObject)
+    {
+        max = givenObject.dataset.GetMaxDataValue();
+        min = givenObject.dataset.GetMinDataValue();
+    }
+
     public void OnSliderUpdated(SliderEventData eventData)
     {
-        if (textMesh == null)
-        {
-            textMesh = GetComponent<TextMeshPro>();
+        if((max == 0) && (min == 0)){
+            textMesh.text = "Error: Max and Min values not set for slider";
         }
-
-        if (textMesh != null)
+        else
         {
             textMesh.text = (((eventData.NewValue) * (max - min)) + min).ToString();
         }
+
+        if(currentGameobj != null)
+        {
+            //currentGameobj.
+        }
+        
     }
 
 }

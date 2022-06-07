@@ -335,6 +335,7 @@ public class loadDicomModel : MonoBehaviour
     }
 
     // Update is called once per frame
+    /*
     void DICOMMeshFunctionEnd()
     {
         marchingCube.Release();
@@ -350,6 +351,6 @@ public class loadDicomModel : MonoBehaviour
             Graphics.DrawMesh(mesh, selfGameObj.transform.position, selfGameObj.transform.rotation, material, 0);
         }
         
-    }
+    }*/
 
 }

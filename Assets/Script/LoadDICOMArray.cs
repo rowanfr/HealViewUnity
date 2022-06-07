@@ -24,10 +24,6 @@ public class LoadDICOMArray : MonoBehaviour
     //private UnityEvent<double[,,], float, float, float> ArrayWithDetailsFound;
     private UnityEvent fileProcessed;
 
-    [SerializeField]
-    //private UnityEvent<double[,,], float, float, float> ArrayWithDetailsFound;
-    private UnityEvent objCreated;
-
     public void Start()
     {
         //As LoadingBar is currently not active we must use the Find method
