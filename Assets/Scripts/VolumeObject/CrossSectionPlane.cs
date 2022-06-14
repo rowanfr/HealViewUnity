@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections.Generic;
 
 namespace UnityVolumeRendering
 {
@@ -24,10 +25,16 @@ namespace UnityVolumeRendering
         {
             if (targetObject == null)
                 return;
-
+            
             Material mat = targetObject.meshRenderer.sharedMaterial;
 
             mat.EnableKeyword("CUTOUT_PLANE");
+
+            //List<Matrix4x4> currentCrossectionPlaneList = new List<Matrix4x4>();
+
+            //mat.GetMatrixArray("_CrossSectionMatrixPlaneArray", currentCrossectionPlaneList);
+            //mat.SetMatrixArray("_CrossSectionMatrixPlaneArray", currentCrossectionPlaneList);
+            //Applies the matrix transformation operation to transform the targetPbject to the CrossSectionPlane matrix space
             mat.SetMatrix("_CrossSectionMatrix", transform.worldToLocalMatrix * targetObject.transform.localToWorldMatrix);
         }
     }

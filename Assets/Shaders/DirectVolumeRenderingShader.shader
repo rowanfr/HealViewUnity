@@ -8,6 +8,8 @@
         _TFTex("Transfer Function Texture (Generated)", 2D) = "" {}
         _MinVal("Min val", Range(0.0, 1.0)) = 0.0
         _MaxVal("Max val", Range(0.0, 1.0)) = 1.0
+        _NumCutoutBox("Current Number of Cutout Boxes", Integer) = 0
+        _NumCutoutPlane("Current Number of Cutout Boxes", Integer) = 0
     }
         SubShader
         {
@@ -40,6 +42,7 @@
                     float4 vertex : POSITION;
                     float4 normal : NORMAL;
                     float2 uv : TEXCOORD0;
+                    UNITY_VERTEX_INPUT_INSTANCE_ID
                 };
 
                 struct frag_in
@@ -48,6 +51,8 @@
                     float2 uv : TEXCOORD0;
                     float3 vertexLocal : TEXCOORD1;
                     float3 normal : NORMAL;
+                    UNITY_VERTEX_INPUT_INSTANCE_ID
+                    UNITY_VERTEX_OUTPUT_STEREO
                 };
 
                 struct frag_out
@@ -68,6 +73,7 @@
 
     #if CUTOUT_ON
                 float4x4 _CrossSectionMatrix;
+                //float4x4 _CrossSectionMatrixPlaneArray[_NumCutoutPlane];
     #endif
 
                 struct RayInfo
@@ -207,6 +213,7 @@
                     float3 pos = currPos - float3(0.5f, 0.5f, 0.5f);
 
                     // Convert from model space to plane's vector space
+                    // By multiplying the vector by the Matrix transform we are able to properly find the relative position of the current point (the 1.0f is to account for the transformation matrix
                     float3 planeSpacePos = mul(_CrossSectionMatrix, float4(pos, 1.0f));
 
         #if CUTOUT_PLANE
@@ -224,6 +231,11 @@
                 frag_in vert_main(vert_in v)
                 {
                     frag_in o;
+
+                    UNITY_SETUP_INSTANCE_ID(v);
+                    UNITY_TRANSFER_INSTANCE_ID(v, o);
+                    UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
                     o.vertex = UnityObjectToClipPos(v.vertex);
                     o.uv = v.uv;
                     o.vertexLocal = v.vertex;

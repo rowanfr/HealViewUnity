@@ -18,6 +18,7 @@ public class LoadDICOMArray : MonoBehaviour
     float zfactor;
     ProgressIndicatorLoadingBar indicator;
     GameObject LoadingIndicator;
+    DICOMImporter importer;
 
 
     [SerializeField]
@@ -47,10 +48,17 @@ public class LoadDICOMArray : MonoBehaviour
 
         //await Task.Run(() => OnOpenDICOMDatasetResult(localPath));
         VolumeDataset blankDataset = new VolumeDataset();
-        indicator.Message = "Loading Model: Dicom File Slices";
-        VolumeDataset[] allDatasets = await Task.Run(() => OnOpenDICOMDatasetResult(localPath, blankDataset));
-
-        indicator.Message = "Loading Model";
+        indicator.Progress = 0f;
+        indicator.Message = "Loading: Getting DICOM File List";
+        List<string> fileList = await Task.Run(() => getFileList(localPath));
+        indicator.Progress = 0f;
+        indicator.Message = "Loading: Convert Files to DICOM Slices";
+        IImageSequenceSeries[] seriesList = await Task.Run(() => getSeriesList(fileList));
+        indicator.Progress = 0f;
+        indicator.Message = "Loading: Assembling DICOM File Slices";
+        VolumeDataset[] allDatasets = await Task.Run(() => OnOpenDICOMDatasetResult(seriesList, blankDataset));
+        indicator.Progress = 0f;
+        indicator.Message = "Loading";
         // Spawn the object
         if (allDatasets != null)
         {
@@ -70,7 +78,8 @@ public class LoadDICOMArray : MonoBehaviour
                 texture.Apply();
                 
                 VolumeRenderedObject obj = VolumeObjectFactory.CreateObjectWTexture(allDatasets[n], texture);
-                obj.transform.position = new Vector3(0, 0, 0);
+                //This is where it places the object
+                obj.transform.position = indicator.transform.position;
             }
         }
 
@@ -79,35 +88,46 @@ public class LoadDICOMArray : MonoBehaviour
         LoadingIndicator.SetActive(false);
         fileProcessed.Invoke();
     }
+    private List<string> getFileList(string localPath)
+    {
+        List<string> fileList = new List<string>();
+        //This is checking if the localPath contains files that end in .dcm. It presumes all .dcm files are DICOM files
+        if (Directory.GetFiles(localPath, "*.dcm").Length > 0)
+        {
+            string[] files = Directory.GetFiles(localPath, "*.dcm");
+            indicator.Progress = 0.5f;
+            fileList.AddRange(files);
+        }
+        //If their aren't any .dcm files then this presumes they are all DICOM files
+        else
+        {
+            string[] files = Directory.GetFiles(localPath);
+            indicator.Progress = 0.5f;
+            fileList.AddRange(files);
+        }
+        indicator.Progress = 0.75f;
+        //This organizes the file list as GetFiles is unordered. This also means that the sort function is the source of order
+        fileList.Sort();
+        indicator.Progress = 1f;
+        return fileList;
+    }
 
-    private VolumeDataset[] OnOpenDICOMDatasetResult(string localPath, VolumeDataset blankDataset)
+    private IImageSequenceSeries[] getSeriesList(List<string> fileList)
+    {
+        importer = new DICOMImporter();//Returns DICOM importer
+        importer.setIndicator(indicator);
+        IImageSequenceSeries[] seriesList = importer.LoadSeries(fileList).ToArray();//DicomImporter/LoadSeries
+        return seriesList;
+        
+    }
+
+    private VolumeDataset[] OnOpenDICOMDatasetResult(IImageSequenceSeries[] seriesList, VolumeDataset blankDataset)
     {
         Debug.Log("Got to beginning of loading Dataset from file");
-        //This is checking if the localPath contains files. If it does it tries to process them.
-        if (localPath != null)
+        //This is checking if the fileList contains files. If it does it tries to process them.
+        if (seriesList != null)
         {
-            List<string> fileList = new List<string>();
-            //This is checking if the localPath contains files that end in .dcm. It presumes all .dcm files are DICOM files
-            if (Directory.GetFiles(localPath, "*.dcm").Length > 0)
-            {
-                string[] files = Directory.GetFiles(localPath, "*.dcm");
-                fileList.AddRange(files);
-            }
-            //If their aren't any .dcm files then this presumes they are all DICOM files
-            else
-            {
-                string[] files = Directory.GetFiles(localPath);
-                fileList.AddRange(files);
-            }
-            //This organizes the file list as GetFiles is unordered. This also means that the sort function is the source of order
-            fileList.Sort();
-
-            DICOMImporter importer = new DICOMImporter();//Returns DICOM importer
-            importer.setIndicator(indicator);
-            IImageSequenceSeries[] seriesList = importer.LoadSeries(fileList).ToArray();//DicomImporter/LoadSeries
             VolumeDataset[] allDatasets = new VolumeDataset[seriesList.Length];
-            
-            
 
             for (int n = 0; n < seriesList.Length; n++)
             {

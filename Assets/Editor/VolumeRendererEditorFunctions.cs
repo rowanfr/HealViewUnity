@@ -20,7 +20,7 @@ namespace UnityVolumeRendering
                 bool recursive = true;
 
                 // Read all files
-                IEnumerable<string> fileCandidates = Directory.EnumerateFiles(dir, "*.*", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
+                List<string> fileCandidates = (List<string>)Directory.EnumerateFiles(dir, "*.*", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly)
                     .Where(p => p.EndsWith(".dcm", StringComparison.InvariantCultureIgnoreCase) || p.EndsWith(".dicom", StringComparison.InvariantCultureIgnoreCase) || p.EndsWith(".dicm", StringComparison.InvariantCultureIgnoreCase));
 
                 if (!fileCandidates.Any())
@@ -29,7 +29,7 @@ namespace UnityVolumeRendering
                     if (UnityEditor.EditorUtility.DisplayDialog("Could not find any DICOM files",
                         $"Failed to find any files with DICOM file extension.{Environment.NewLine}Do you want to include files without DICOM file extension?", "Yes", "No"))
                     {
-                        fileCandidates = Directory.EnumerateFiles(dir, "*.*", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
+                        fileCandidates = (List<string>)Directory.EnumerateFiles(dir, "*.*", recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
                     }
 #endif
                 }

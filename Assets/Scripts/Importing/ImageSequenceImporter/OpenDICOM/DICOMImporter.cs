@@ -56,33 +56,36 @@ namespace UnityVolumeRendering
             indicator = setIndicator;
         }
 
-        public IEnumerable<IImageSequenceSeries> LoadSeries(IEnumerable<string> fileCandidates)
+        public IEnumerable<IImageSequenceSeries> LoadSeries(List<string> fileCandidates)
         {
 
 
             // Load all DICOM files
             List<DICOMSliceFile> files = new List<DICOMSliceFile>();
 
-            IEnumerable<string> sortedFiles = fileCandidates.OrderBy(s => s);
+            fileCandidates.Sort();
 
-            foreach (string filePath in sortedFiles)
+            for(int n = 0; n < fileCandidates.Count(); n++)
             {
-                DICOMSliceFile sliceFile = ReadDICOMFile(filePath);
+                DICOMSliceFile sliceFile = ReadDICOMFile(fileCandidates[n]);
                 if (sliceFile != null)
                 {
                     files.Add(sliceFile);
                 }
+                indicator.Progress = 0.95f * (float)n / (float)fileCandidates.Count();
             }
 
             // Split parsed DICOM files into series (by DICOM series UID)
             Dictionary<string, DICOMSeries> seriesByUID = new Dictionary<string, DICOMSeries>();
-            foreach (DICOMSliceFile file in files)
+
+            for (int n = 0; n < files.Count; n++)
             {
-                if (!seriesByUID.ContainsKey(file.seriesUID))
+                if (!seriesByUID.ContainsKey(files[n].seriesUID))
                 {
-                    seriesByUID.Add(file.seriesUID, new DICOMSeries());
+                    seriesByUID.Add(files[n].seriesUID, new DICOMSeries());
                 }
-                seriesByUID[file.seriesUID].dicomFiles.Add(file);
+                seriesByUID[files[n].seriesUID].dicomFiles.Add(files[n]);
+                indicator.Progress = 0.95f + (0.95f * (float)n / (float)files.Count());
             }
 
             Debug.Log($"Loaded {seriesByUID.Count} DICOM series");
