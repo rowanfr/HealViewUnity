@@ -65,27 +65,49 @@ namespace UnityVolumeRendering
 
             fileCandidates.Sort();
 
-            for(int n = 0; n < fileCandidates.Count(); n++)
-            {
-                DICOMSliceFile sliceFile = ReadDICOMFile(fileCandidates[n]);
-                if (sliceFile != null)
-                {
-                    files.Add(sliceFile);
-                }
-                indicator.Progress = 0.95f * (float)n / (float)fileCandidates.Count();
-            }
-
             // Split parsed DICOM files into series (by DICOM series UID)
             Dictionary<string, DICOMSeries> seriesByUID = new Dictionary<string, DICOMSeries>();
 
-            for (int n = 0; n < files.Count; n++)
+            if (indicator != null)
             {
-                if (!seriesByUID.ContainsKey(files[n].seriesUID))
+                for (int n = 0; n < fileCandidates.Count(); n++)
                 {
-                    seriesByUID.Add(files[n].seriesUID, new DICOMSeries());
+                    DICOMSliceFile sliceFile = ReadDICOMFile(fileCandidates[n]);
+                    if (sliceFile != null)
+                    {
+                        files.Add(sliceFile);
+                    }
+                    indicator.Progress = 0.95f * (float)n / (float)fileCandidates.Count();
                 }
-                seriesByUID[files[n].seriesUID].dicomFiles.Add(files[n]);
-                indicator.Progress = 0.95f + (0.95f * (float)n / (float)files.Count());
+
+                for (int n = 0; n < files.Count; n++)
+                {
+                    if (!seriesByUID.ContainsKey(files[n].seriesUID))
+                    {
+                        seriesByUID.Add(files[n].seriesUID, new DICOMSeries());
+                    }
+                    seriesByUID[files[n].seriesUID].dicomFiles.Add(files[n]);
+                    indicator.Progress = 0.95f + (0.95f * (float)n / (float)files.Count());
+                }
+            } else
+            {
+                for (int n = 0; n < fileCandidates.Count(); n++)
+                {
+                    DICOMSliceFile sliceFile = ReadDICOMFile(fileCandidates[n]);
+                    if (sliceFile != null)
+                    {
+                        files.Add(sliceFile);
+                    }
+                }
+
+                for (int n = 0; n < files.Count; n++)
+                {
+                    if (!seriesByUID.ContainsKey(files[n].seriesUID))
+                    {
+                        seriesByUID.Add(files[n].seriesUID, new DICOMSeries());
+                    }
+                    seriesByUID[files[n].seriesUID].dicomFiles.Add(files[n]);
+                }
             }
 
             Debug.Log($"Loaded {seriesByUID.Count} DICOM series");
@@ -134,7 +156,6 @@ namespace UnityVolumeRendering
                 for (int iSlice = 0; iSlice < files.Count; iSlice++)
                 {
                     indicator.Progress = (float)iSlice / (float)files.Count;
-                    Debug.Log("Slice" + iSlice.ToString());
                     DICOMSliceFile slice = files[iSlice];
                     DicomPixelData pixelImage = DicomPixelData.Create(slice.file.Dataset);
                     IPixelData pixelData = PixelDataFactory.Create(pixelImage, 0);

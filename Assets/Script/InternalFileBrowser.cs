@@ -14,24 +14,19 @@ using System.Threading.Tasks;
 using Windows.Storage.Streams;
 using Windows.Storage.Pickers;
 #endif
-
-//Must attach script to unity object to enable function to be called as event
-public class InternalFileBrowser : MonoBehaviour
+namespace FileBrowser
 {
-    public string path;
-
-    //use generic class of UnityEvent to pass path. Ensure that the dynamic function is selected in Unity editor rather than static function so that data can be passed in from script
-    [SerializeField]
-    private UnityEvent<string> PathFound;
-
-    public void getBrowser()
+    //Must attach script to unity object to enable function to be called as event
+    public class InternalFileBrowser : MonoBehaviour
     {
+        public string getFolderBrowser()
+        {
 #if UNITY_EDITOR || !UNITY_WSA_10_0
-        path = EditorUtility.OpenFolderPanel("Select DICOM Folder", "", "");
+            string path = EditorUtility.OpenFolderPanel("Select Folder", "", "");
 
-        
 
-        //UNITY_WSA_10_0 	Scripting symbol for Universal Windows Platform. Additionally WINDOWS_UWP is defined when compiling C# files against .NET Core.
+
+            //UNITY_WSA_10_0 	Scripting symbol for Universal Windows Platform. Additionally WINDOWS_UWP is defined when compiling C# files against .NET Core.
 #elif !UNITY_EDITOR && UNITY_WSA_10_0
         
 
@@ -52,14 +47,30 @@ public class InternalFileBrowser : MonoBehaviour
         
         
 #endif
+            path = path.Replace('/', '\\');
+            if ((path != null) && (path != ""))
+            {
+                return path;
+            }
+            return null;
 
-        if ((path != null) && (path != ""))
-        {
-            PathFound.Invoke(path);
         }
 
-    }
+        public string getFileBrowser(string[] extensions)
+        {
+            string path = EditorUtility.OpenFilePanelWithFilters("Select File", "", extensions);
 
+            path = path.Replace('/', '\\');
+            if ((path != null) && (path != ""))
+            {
+                return path;
+            }
+            return null;
+
+        }
+
+
+    }
 }
 
 /*
@@ -86,6 +97,7 @@ public class InternalFileBrowser : MonoBehaviour
             PathFound.Invoke();
         }
     }
+
 
 Also look into: https://docs.microsoft.com/en-us/windows/mixed-reality/develop/native/holographic-remoting-overview
 https://www.youtube.com/watch?v=cB_ZpXx_sqo

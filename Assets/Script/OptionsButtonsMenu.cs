@@ -12,8 +12,8 @@ public class OptionsButtonsMenu : MonoBehaviour
     private GameObject optionsMenu;
     private RectTransform slateArea;
     private BoxCollider slateCollider;
-    private double arrayMin;
-    private double arrayMax;
+    private float arrayMin;
+    private float arrayMax;
 
     [SerializeField]
     public GameObject optionsPrefab;
@@ -32,8 +32,8 @@ public class OptionsButtonsMenu : MonoBehaviour
     public async void setNecessaryValFromArray(double[,,] DICOMArray, float xscale, float yscale, float zscale)
     {
         double[] minMax = await Task.Run(() => getArrayMinMax(DICOMArray));
-        arrayMin = minMax[0];
-        arrayMax = minMax[1];
+        arrayMin = (float)minMax[0];
+        arrayMax = (float)minMax[1];
 
         Debug.Log(arrayMin);
         Debug.Log(arrayMax);

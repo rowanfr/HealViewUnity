@@ -7,7 +7,7 @@ using UnityEngine.Events;
 
 [RequireComponent(typeof(TMP_Dropdown))]
 
-public class EditDropdownOptions : MonoBehaviour
+public class DropdownMerge : MonoBehaviour
 {
     private TMP_Dropdown TextMeshProDropdown;
     private List<GameObject> listedObjects;
@@ -30,7 +30,8 @@ public class EditDropdownOptions : MonoBehaviour
         TextMeshProDropdown.ClearOptions();
         List<TMP_Dropdown.OptionData> TMPDropNameList = new List<TMP_Dropdown.OptionData>();
         Debug.Log(volumeObjsComponent.Length);
-        listedObjects = new List<GameObject>();
+        TMPDropNameList.Add(new TMP_Dropdown.OptionData(""));
+        listedObjects = new List<GameObject>();//On Value change in dropdown only works if value is changed from default 0 so this is put here as junk data to force a user change
         for (int n = 0; n < volumeObjsComponent.Length; n++)
         {
             TMPDropNameList.Add(new TMP_Dropdown.OptionData(volumeObjsComponent[n].name));
@@ -44,37 +45,25 @@ public class EditDropdownOptions : MonoBehaviour
         }
 
         TextMeshProDropdown.AddOptions(TMPDropNameList);
-        
+
         Debug.Log(listedObjects.Count);
 
 
-        if (listedObjects.Count > 0)
-        {
-            updateMenu.Invoke(listedObjects[0]);
-        } else
+        if (!(listedObjects.Count > 0))
         {
             shutdownMenu.Invoke();
         }
-        
+
     }
 
     //Activates upon selection of result
     public void useSelectedMesh(System.Int32 Result)
     {
-        
+
         Debug.Log(Result);
-        if (listedObjects.Count > 1)
-        {
-            updateMenu.Invoke(listedObjects[Result]);
-        }
-        else if (listedObjects.Count == 1)
-        {
-            updateMenu.Invoke(listedObjects[0]);
-        } else
-        {
-            shutdownMenu.Invoke();
-        }
-        
+        updateMenu.Invoke(listedObjects[Result - 1]);
+        shutdownMenu.Invoke();
+
     }
 
 }
