@@ -26,7 +26,7 @@ public class ButtonInterfaceScript : MonoBehaviour
     Dictionary<string, Vector3> defaultScales = new Dictionary<string, Vector3>();
 
     private List<GameObject> attachedObjects = new List<GameObject>();
-    
+
 
     [SerializeField]
     private UnityEvent deleteItem;
@@ -42,31 +42,31 @@ public class ButtonInterfaceScript : MonoBehaviour
         Debug.Log("Given Object");
         Debug.Log(givenObject);
         currentGameObj = givenObject;
-        if(defaultPositions.ContainsKey(currentGameObj.name + "Position"))
+        if (defaultPositions.ContainsKey(currentGameObj.GetInstanceID() + "Position"))
         {
             Debug.Log("The Default paramater for this gameobject already exists");
         }
         else
         {
-            defaultPositions.Add(currentGameObj.name + "Position", currentGameObj.transform.position);
+            defaultPositions.Add(currentGameObj.GetInstanceID() + "Position", currentGameObj.transform.position);
         }
 
-        if (defaultRotations.ContainsKey(currentGameObj.name + "Rotation"))
+        if (defaultRotations.ContainsKey(currentGameObj.GetInstanceID() + "Rotation"))
         {
             Debug.Log("The Default paramater for this gameobject already exists");
         }
         else
         {
-            defaultRotations.Add(currentGameObj.name + "Rotation", currentGameObj.transform.rotation);
+            defaultRotations.Add(currentGameObj.GetInstanceID() + "Rotation", currentGameObj.transform.rotation);
         }
 
-        if (defaultScales.ContainsKey(currentGameObj.name + "Scale"))
+        if (defaultScales.ContainsKey(currentGameObj.GetInstanceID() + "Scale"))
         {
             Debug.Log("The Default paramater for this gameobject already exists");
         }
         else
         {
-            defaultScales.Add(currentGameObj.name + "Scale", currentGameObj.transform.localScale);
+            defaultScales.Add(currentGameObj.GetInstanceID() + "Scale", currentGameObj.transform.localScale);
         }
     }
 
@@ -79,10 +79,10 @@ public class ButtonInterfaceScript : MonoBehaviour
             {
                 //Get Default Scale:
                 Vector3 defaultImportScale = new Vector3();
-                defaultScales.TryGetValue(gameObjectToAttach.name + "Scale", out defaultImportScale);
+                defaultScales.TryGetValue(gameObjectToAttach.GetInstanceID() + "Scale", out defaultImportScale);
 
                 Vector3 defaultScale = new Vector3();
-                defaultScales.TryGetValue(currentGameObj.name + "Scale", out defaultScale);
+                defaultScales.TryGetValue(currentGameObj.GetInstanceID() + "Scale", out defaultScale);
 
                 Vector3 findalImportScale = new Vector3(defaultImportScale.x / defaultScale.x, defaultImportScale.y / defaultScale.y, defaultImportScale.z / defaultScale.z);
 
@@ -101,10 +101,10 @@ public class ButtonInterfaceScript : MonoBehaviour
             {
                 //Get Default Scale:
                 Vector3 defaultImportScale = new Vector3();
-                defaultScales.TryGetValue(gameObjectToAttach.name + "Scale", out defaultImportScale);
+                defaultScales.TryGetValue(gameObjectToAttach.GetInstanceID() + "Scale", out defaultImportScale);
 
                 Vector3 defaultScale = new Vector3();
-                defaultScales.TryGetValue(currentGameObj.name + "Scale", out defaultScale);
+                defaultScales.TryGetValue(currentGameObj.GetInstanceID() + "Scale", out defaultScale);
 
                 Vector3 findalImportScale = new Vector3(defaultImportScale.x / defaultScale.x, defaultImportScale.y / defaultScale.y, defaultImportScale.z / defaultScale.z);
 
@@ -122,9 +122,9 @@ public class ButtonInterfaceScript : MonoBehaviour
 
     private bool checkIfInAttachedList(GameObject gameObjectToAttach)
     {
-        for(int n = 0; n < attachedObjects.Count; n++)
+        for (int n = 0; n < attachedObjects.Count; n++)
         {
-            if(gameObjectToAttach == attachedObjects[n])
+            if (gameObjectToAttach == attachedObjects[n])
             {
                 return true;
             }
@@ -169,7 +169,7 @@ public class ButtonInterfaceScript : MonoBehaviour
                         currentGameVolume.transferFunction.GenerateTexture();
                         currentGameVolume.SetTransferFunctionMode(TFRenderMode.TF1D);
                     }
-                        
+
                 }
             }
         }
@@ -178,10 +178,10 @@ public class ButtonInterfaceScript : MonoBehaviour
     {
         if (currentGameObj.TryGetComponent(out VolumeRenderedObject currentGameVolume))
         {
-            GameObject currentCuttingPlane = GameObject.Find(currentGameObj.name + "CuttingPlane");
+            GameObject currentCuttingPlane = GameObject.Find(currentGameObj.GetInstanceID() + "CuttingPlane");
             if (currentCuttingPlane == null)
             {
-                VolumeObjectFactory.SpawnNamedCrossSectionPlane(currentGameVolume, currentGameObj.name + "CuttingPlane");
+                VolumeObjectFactory.SpawnNamedCrossSectionPlane(currentGameVolume, currentGameObj.GetInstanceID() + "CuttingPlane");
             }
             else
             {
@@ -193,10 +193,10 @@ public class ButtonInterfaceScript : MonoBehaviour
     {
         if (currentGameObj.TryGetComponent(out VolumeRenderedObject currentGameVolume))
         {
-            GameObject currentCuttingBox = GameObject.Find(currentGameObj.name + "CuttingBox");
+            GameObject currentCuttingBox = GameObject.Find(currentGameObj.GetInstanceID() + "CuttingBox");
             if (currentCuttingBox == null)
             {
-                VolumeObjectFactory.SpawnNamedCutoutBox(currentGameVolume, currentGameObj.name + "CuttingBox");
+                VolumeObjectFactory.SpawnNamedCutoutBox(currentGameVolume, currentGameObj.GetInstanceID() + "CuttingBox");
             }
             else
             {
@@ -210,9 +210,9 @@ public class ButtonInterfaceScript : MonoBehaviour
         Vector3 relocatePosition;
         Quaternion relocateRotation;
         Vector3 relocateScale;
-        defaultPositions.TryGetValue(currentGameObj.name + "Position", out relocatePosition);
-        defaultRotations.TryGetValue(currentGameObj.name + "Rotation", out relocateRotation);
-        defaultScales.TryGetValue(currentGameObj.name + "Scale", out relocateScale);
+        defaultPositions.TryGetValue(currentGameObj.GetInstanceID() + "Position", out relocatePosition);
+        defaultRotations.TryGetValue(currentGameObj.GetInstanceID() + "Rotation", out relocateRotation);
+        defaultScales.TryGetValue(currentGameObj.GetInstanceID() + "Scale", out relocateScale);
 
         currentGameObj.GetComponent<Transform>().position = relocatePosition;
         currentGameObj.GetComponent<Transform>().rotation = relocateRotation;

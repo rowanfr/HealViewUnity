@@ -19,7 +19,7 @@ public class SliderValue : MonoBehaviour
     [SerializeField]
     private bool isMinSlider;
 
-    private Dictionary<string, float> sliderValueStore;
+    private Dictionary<int, float> sliderValueStore;
     private GameObject currentGameObj;
 
     public void setMaxMin(float maxInput, float minInput)
@@ -32,7 +32,7 @@ public class SliderValue : MonoBehaviour
     public float[] getMaxMin()
     {
 
-        float[] maxmin  = { max, min};
+        float[] maxmin = { max, min };
         return maxmin;
     }
 
@@ -41,7 +41,7 @@ public class SliderValue : MonoBehaviour
     {
         if (sliderValueStore == null)
         {
-            sliderValueStore = new Dictionary<string, float>();
+            sliderValueStore = new Dictionary<int, float>();
         }
         currentGameObj = givenObject;
         if (currentGameObj.TryGetComponent(out VolumeRenderedObject currentVolume))
@@ -50,26 +50,26 @@ public class SliderValue : MonoBehaviour
             min = currentVolume.dataset.GetMinDataValue();
             Debug.Log(max);
             Debug.Log(min);
-            if (sliderValueStore.ContainsKey(currentGameObj.name))
+            if (sliderValueStore.ContainsKey(currentGameObj.GetInstanceID()))
             {
                 float sliderValue;
-                sliderValueStore.TryGetValue(currentGameObj.name, out sliderValue);
+                sliderValueStore.TryGetValue(currentGameObj.GetInstanceID(), out sliderValue);
                 currentSlider.SliderValue = sliderValue;
             }
             else
             {
                 if (isMinSlider)
                 {
-                    sliderValueStore.Add(currentGameObj.name,0f);
+                    sliderValueStore.Add(currentGameObj.GetInstanceID(), 0f);
                     currentSlider.SliderValue = 0f;
                 }
                 else
                 {
-                    sliderValueStore.Add(currentGameObj.name, 1f);
+                    sliderValueStore.Add(currentGameObj.GetInstanceID(), 1f);
                     currentSlider.SliderValue = 1f;
                 }
             }
-        } 
+        }
         else
         {
             max = 0f;
@@ -83,32 +83,33 @@ public class SliderValue : MonoBehaviour
                 currentSlider.SliderValue = 1f;
             }
         }
-        
+
     }
 
     public void OnSliderUpdated(SliderEventData eventData)
     {
         if (sliderValueStore == null)
         {
-            sliderValueStore = new Dictionary<string, float>();
+            sliderValueStore = new Dictionary<int, float>();
         }
-        if ((max == 0) && (min == 0)){
+        if ((max == 0) && (min == 0))
+        {
             textMesh.text = "Max and Min values not set for slider";
         }
         else
         {
             textMesh.text = (((eventData.NewValue) * (max - min)) + min).ToString();
-            if (sliderValueStore.ContainsKey(currentGameObj.name))
+            if (sliderValueStore.ContainsKey(currentGameObj.GetInstanceID()))
             {
-                sliderValueStore[currentGameObj.name] = eventData.NewValue;
-            } 
+                sliderValueStore[currentGameObj.GetInstanceID()] = eventData.NewValue;
+            }
             else
             {
                 Debug.Log("Slider Key not yet set");
             }
-            
+
         }
-        
+
     }
 
 }

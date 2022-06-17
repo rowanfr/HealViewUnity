@@ -19,8 +19,6 @@ public class EditDropdownOptions : MonoBehaviour
     [SerializeField]
     private UnityEvent shutdownMenu;
 
-
-
     public void getNewList()
     {
         VolumeRenderedObject[] volumeObjsComponent = GameObject.FindObjectsOfType<VolumeRenderedObject>();
@@ -33,13 +31,28 @@ public class EditDropdownOptions : MonoBehaviour
         listedObjects = new List<GameObject>();
         for (int n = 0; n < volumeObjsComponent.Length; n++)
         {
-            TMPDropNameList.Add(new TMP_Dropdown.OptionData(volumeObjsComponent[n].name));
+            if (TMPDropNameList.Contains(new TMP_Dropdown.OptionData(volumeObjsComponent[n].name)))
+            {
+                TMPDropNameList.Add(new TMP_Dropdown.OptionData(volumeObjsComponent[n].name + volumeObjsComponent[n].GetInstanceID()));
+            }
+            else
+            {
+                TMPDropNameList.Add(new TMP_Dropdown.OptionData(volumeObjsComponent[n].name));
+            }
+            
             listedObjects.Add(volumeObjsComponent[n].gameObject);
         }
         Debug.Log(parentObjImport.transform.childCount);
         foreach (Transform child in parentObjImport.transform)
         {
-            TMPDropNameList.Add(new TMP_Dropdown.OptionData(child.gameObject.name));
+            if (TMPDropNameList.Contains(new TMP_Dropdown.OptionData(child.gameObject.name)))
+            {
+                TMPDropNameList.Add(new TMP_Dropdown.OptionData(child.gameObject.name + child.gameObject.GetInstanceID()));
+            } else
+            {
+                TMPDropNameList.Add(new TMP_Dropdown.OptionData(child.gameObject.name));
+            }
+            
             listedObjects.Add(child.gameObject);
         }
 
