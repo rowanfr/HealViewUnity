@@ -94,6 +94,7 @@ public class ButtonInterfaceScript : MonoBehaviour
 
                 gameObjectToAttach.transform.SetParent(currentGameObj.transform);
                 gameObjectToAttach.transform.localPosition = new Vector3(0, 0, 0);
+                gameObjectToAttach.transform.localRotation = new Quaternion(0, 0, 0, 0);
                 gameObjectToAttach.transform.localScale = findalImportScale;
 
             }
