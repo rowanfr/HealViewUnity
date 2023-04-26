@@ -135,7 +135,22 @@ public class ButtonInterfaceScript : MonoBehaviour
 
     public void removeObject()
     {
-        GameObject.DestroyImmediate(currentGameObj);//This is necessary because if we only use destroy the deleteItem Event will miscount the number of current items
+        if (currentGameObj.TryGetComponent(out VolumeRenderedObject currentGameVolume))
+        {
+            GameObject currentCuttingPlane = GameObject.Find(currentGameObj.GetInstanceID() + "CuttingPlane");
+            GameObject currentCuttingBox = GameObject.Find(currentGameObj.GetInstanceID() + "CuttingBox");
+            if (currentCuttingBox != null)
+            {
+                GameObject.Destroy(currentCuttingBox);
+
+            }
+            if (currentCuttingPlane != null)
+            {
+                GameObject.Destroy(currentCuttingPlane);
+
+            }
+            GameObject.DestroyImmediate(currentGameObj);//This is necessary because if we only use destroy the deleteItem Event will miscount the number of current items
+        }
         deleteItem.Invoke();
     }
     public void changeTransferFunction()
@@ -175,33 +190,84 @@ public class ButtonInterfaceScript : MonoBehaviour
             }
         }
     }
+    public void spawnSlice()
+    {
+        if (currentGameObj.TryGetComponent(out VolumeRenderedObject currentGameVolume))
+        {
+            GameObject currentSlice = GameObject.Find(currentGameObj.GetInstanceID() + "Slice");
+            try 
+            {
+                SlicingPlane slicePlainVar = currentGameObj.GetComponentInChildren<SlicingPlane>();
+                
+                GameObject.Destroy(slicePlainVar.gameObject);
+            }
+            catch
+            {
+                currentGameVolume.CreateSlicingPlane();
+            }
+        }
+    }
     public void spawnCuttingPlane()
     {
         if (currentGameObj.TryGetComponent(out VolumeRenderedObject currentGameVolume))
         {
             GameObject currentCuttingPlane = GameObject.Find(currentGameObj.GetInstanceID() + "CuttingPlane");
-            if (currentCuttingPlane == null)
+            GameObject currentCuttingBox = GameObject.Find(currentGameObj.GetInstanceID() + "CuttingBox");
+            if (currentCuttingBox == null)
             {
-                VolumeObjectFactory.SpawnNamedCrossSectionPlane(currentGameVolume, currentGameObj.GetInstanceID() + "CuttingPlane");
+                if (currentCuttingPlane == null)
+                {
+                    VolumeObjectFactory.SpawnNamedCrossSectionPlane(currentGameVolume, currentGameObj.GetInstanceID() + "CuttingPlane");
+                }
+                else
+                {
+                    GameObject.Destroy(currentCuttingPlane);
+                }
             }
             else
             {
-                GameObject.Destroy(currentCuttingPlane);
+                GameObject.Destroy(currentCuttingBox);
+                if (currentCuttingPlane == null)
+                {
+                    VolumeObjectFactory.SpawnNamedCrossSectionPlane(currentGameVolume, currentGameObj.GetInstanceID() + "CuttingPlane");
+                }
+                else
+                {
+                    GameObject.Destroy(currentCuttingPlane);
+                }
             }
+            
         }
     }
+    
     public void spawnCutingBox()
     {
         if (currentGameObj.TryGetComponent(out VolumeRenderedObject currentGameVolume))
         {
             GameObject currentCuttingBox = GameObject.Find(currentGameObj.GetInstanceID() + "CuttingBox");
-            if (currentCuttingBox == null)
+            GameObject currentCuttingPlane = GameObject.Find(currentGameObj.GetInstanceID() + "CuttingPlane");
+            if (currentCuttingPlane == null)
             {
-                VolumeObjectFactory.SpawnNamedCutoutBox(currentGameVolume, currentGameObj.GetInstanceID() + "CuttingBox");
+                if (currentCuttingBox == null)
+                {
+                    VolumeObjectFactory.SpawnNamedCutoutBox(currentGameVolume, currentGameObj.GetInstanceID() + "CuttingBox");
+                }
+                else
+                {
+                    GameObject.Destroy(currentCuttingBox);
+                }
             }
             else
             {
-                GameObject.Destroy(currentCuttingBox);
+                GameObject.Destroy(currentCuttingPlane);
+                if (currentCuttingBox == null)
+                {
+                    VolumeObjectFactory.SpawnNamedCutoutBox(currentGameVolume, currentGameObj.GetInstanceID() + "CuttingBox");
+                }
+                else
+                {
+                    GameObject.Destroy(currentCuttingBox);
+                }
             }
         }
 
